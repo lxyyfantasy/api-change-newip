@@ -1,0 +1,24 @@
+services:
+  rustdesk-api:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        COUNTRY: CN
+        FRONTEND_GIT_REPO: https://github.com/lejianwen/rustdesk-api-web.git
+        FRONTEND_GIT_BRANCH: master
+    # image: lejianwen/rustdesk-api
+    container_name: rustdesk-api
+    environment:
+      - TZ=Asia/Shanghai
+      - RUSTDESK_API_RUSTDESK_ID_SERVER=192.168.1.66:10290
+      - RUSTDESK_API_RUSTDESK_RELAY_SERVER=192.168.1.66:21357
+      - RUSTDESK_API_RUSTDESK_API_SERVER=http://127.0.0.1:23399
+      - RUSTDESK_API_RUSTDESK_KEY=123456789
+    ports:
+      - 23399:23399
+    volumes:
+      - ./data/rustdesk/api:/app/data #将数据库挂载出来方便备份
+      - ./conf:/app/conf # config
+      # - ./resources:/app/resources # 静态资源
+    restart: unless-stopped

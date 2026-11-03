@@ -1,0 +1,125 @@
+name: Build Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      BASE_IMAGE_NAMESPACE:
+        description: 'Base image namespace (Default: Your Github username)'
+        required: false
+        default: ''
+      DOCKERHUB_IMAGE_NAMESPACE:
+        description: 'Docker Hub image namespace (Default: Your Github username)'
+        required: false
+        default: ''
+      GHCR_IMAGE_NAMESPACE:
+        description: 'GitHub Container Registry image namespace (Default: Your Github username)'
+        required: false
+        default: ''
+      SKIP_DOCKER_HUB:
+        description: 'Set to true to skip pushing to Docker Hub (default: false)'
+        required: false
+        default: 'false'
+      SKIP_GHCR:
+        description: 'Set to true to skip pushing to GHCR (default: false)'
+        required: false
+        default: 'false'
+      WEBCLIENT_SOURCE_LOCATION:
+        description: 'Web Client API Repository'
+        required: true
+        default: 'https://github.com/lejianwen/rustdesk-api-web'
+
+env:
+  LATEST_TAG: latest
+  WEBCLIENT_SOURCE_LOCATION: ${{ github.event.inputs.WEBCLIENT_SOURCE_LOCATION || 'https://github.com/lejianwen/rustdesk-api-web' }}
+  BASE_IMAGE_NAMESPACE: ${{ github.event.inputs.BASE_IMAGE_NAMESPACE || github.actor }}
+  DOCKERHUB_IMAGE_NAMESPACE: ${{ github.event.inputs.DOCKERHUB_IMAGE_NAMESPACE || github.actor }}
+  GHCR_IMAGE_NAMESPACE: ${{ github.event.inputs.GHCR_IMAGE_NAMESPACE || github.actor }}
+  SKIP_DOCKER_HUB: ${{ github.event.inputs.SKIP_DOCKER_HUB || 'false' }}
+  SKIP_GHCR: ${{ github.event.inputs.SKIP_GHCR || 'false' }}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          - { platform: "amd64", goos: "linux", file_ext: "tar.gz" }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go environment
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'  # 选择 Go 版本
+
+      - name: Set up npm
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+
+      - name: build rustdesk-api-web
+        working-directory: apiweb
+        run: |
+          npm install
+          npm run build
+          mkdir -p ../resources/admin/
+          cp -ar dist/* ../resources/admin/
+
+      - name: tidy
+        run: go mod tidy
+
+      - name: swag
+        run: |
+          go install github.com/swaggo/swag/cmd/swag@latest
+          swag init -g cmd/apimain.go --output docs/api --instanceName api --exclude http/controller/admin
+          swag init -g cmd/apimain.go --output docs/admin --instanceName admin --exclude http/controller/api
+
+      - name: Build for ${{ matrix.job.goos }}-${{ matrix.job.platform }}
+        run: |
+          mkdir release -p
+          cp -ar resources release/
+          cp -ar docs release/
+          cp -ar conf release/
+          mkdir -p release/data
+          mkdir -p release/runtime
+          if [ "${{ matrix.job.goos }}" = "windows" ]; then
+            sudo apt-get install gcc-mingw-w64-x86-64 zip -y
+            GOOS=${{ matrix.job.goos }} GOARCH=${{ matrix.job.platform }} CC=x86_64-w64-mingw32-gcc CGO_LDFLAGS="-static" CGO_ENABLED=1 go build -ldflags "-s -w" -o ./release/apimain.exe ./cmd/apimain.go
+            echo @echo off > release/start.bat
+            echo cmd /c \"%~dp0apimain.exe\" >> release/start.bat
+            zip -r ${{ matrix.job.goos}}-${{ matrix.job.platform }}.${{matrix.job.file_ext}} ./release
+          else
+            if [ "${{ matrix.job.platform }}" = "arm64" ]; then
+                wget https://musl.ljw.red/aarch64-linux-musl-cross.tgz
+                tar -xf aarch64-linux-musl-cross.tgz
+                export PATH=$PATH:$PWD/aarch64-linux-musl-cross/bin
+                GOOS=${{ matrix.job.goos }} GOARCH=${{ matrix.job.platform }} CC=aarch64-linux-musl-gcc CGO_LDFLAGS="-static" CGO_ENABLED=1 go build -ldflags "-s -w" -o ./release/apimain ./cmd/apimain.go
+            elif [ "${{ matrix.job.platform }}" = "armv7l" ]; then
+                wget https://musl.ljw.red/armv7l-linux-musleabihf-cross.tgz
+                tar -xf armv7l-linux-musleabihf-cross.tgz
+                export PATH=$PATH:$PWD/armv7l-linux-musleabihf-cross/bin
+                GOOS=${{ matrix.job.goos }} GOARCH=arm GOARM=7 CC=armv7l-linux-musleabihf-gcc CGO_LDFLAGS="-static" CGO_ENABLED=1 go build -ldflags "-s -w" -o ./release/apimain ./cmd/apimain.go
+            else
+              sudo apt-get install musl musl-dev musl-tools -y
+              GOOS=${{ matrix.job.goos }} GOARCH=${{ matrix.job.platform }} CC=musl-gcc CGO_LDFLAGS="-static" CGO_ENABLED=1 go build -ldflags "-s -w" -o ./release/apimain ./cmd/apimain.go
+            fi
+            tar -czf ${{ matrix.job.goos}}-${{ matrix.job.platform }}.${{matrix.job.file_ext}} ./release
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-api-${{ matrix.job.goos }}-${{ matrix.job.platform }}
+          path: |
+            ${{ matrix.job.goos}}-${{ matrix.job.platform }}.${{matrix.job.file_ext}}
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ matrix.job.goos}}-${{ matrix.job.platform }}.${{matrix.job.file_ext}}
+          tag_name: test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

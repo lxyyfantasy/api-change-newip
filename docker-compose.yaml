@@ -1,0 +1,17 @@
+services:
+  rustdesk-api:
+    image: lejianwen/rustdesk-api
+    container_name: rustdesk-api
+    environment:
+      - TZ=Asia/Shanghai
+      - RUSTDESK_API_RUSTDESK_ID_SERVER=192.168.1.66:10290
+      - RUSTDESK_API_RUSTDESK_RELAY_SERVER=192.168.1.66:21357
+      - RUSTDESK_API_RUSTDESK_API_SERVER=http://127.0.0.1:23399
+      - RUSTDESK_API_RUSTDESK_KEY=123456789
+    ports:
+      - 23399:23399
+    volumes:
+      - ./data/rustdesk/api:/app/data # database
+      # - ./conf:/app/conf # config
+      # - ./resources:/app/resources # 静态资源
+    restart: unless-stopped

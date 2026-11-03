@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!--
+      If you are serving your web app in a path other than the root, change the
+      href value below to reflect the base path you are serving from.
+
+      The path provided below has to start and end with a slash "/" in order for
+      it to work correctly.
+
+      For more details:
+      * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+      This is a placeholder for base href that will be replaced by the value of
+      the `--base-href` argument provided to `flutter build`.
+    -->
+    <base href="/webclient/">
+
+    <meta charset="UTF-8">
+    <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+    <meta name="description" content="Remote Desktop.">
+
+    <!-- iOS meta tags & icons -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="RustDesk">
+    <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+
+    <title>RustDesk</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="/webclient-config/index.js"></script>
+    <script src="ogvjs-1.8.6/ogv.js"></script>
+    <script type="module" crossorigin src="js/dist/index.js"></script>
+    <script>
+    </script>
+    <link rel="modulepreload" href="js/dist/vendor.js">
+    <script src="yuv-canvas-1.2.6.js"></script>
+
+    <style>
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+        }
+
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border: 15px solid;
+            border-top: 16px solid #024eff;
+            border-right: 16px solid white;
+            border-bottom: 16px solid #024eff;
+            border-left: 16px solid white;
+            width: 120px;
+            height: 120px;
+            -webkit-animation: spin 2s linear infinite;
+            animation: spin 2s linear infinite;
+        }
+
+        @-webkit-keyframes spin {
+            0% {
+                -webkit-transform: rotate(0deg);
+            }
+
+            100% {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+<div class="loading">
+    <div class="loader"></div>
+</div>
+<!-- This script installs service_worker.js to provide PWA functionality to
+     application. For more information, see:
+     https://developers.google.com/web/fundamentals/primers/service-workers -->
+<script>
+    var serviceWorkerVersion = '1200232272';
+    var scriptLoaded = false;
+
+    function loadMainDartJs() {
+        if (scriptLoaded) {
+            return;
+        }
+        scriptLoaded = true;
+        var scriptTag = document.createElement('script');
+        scriptTag.src = 'main.dart.js';
+        scriptTag.type = 'application/javascript';
+        document.body.append(scriptTag);
+    }
+
+    if ('serviceWorker' in navigator) {
+        // Service workers are supported. Use them.
+        window.addEventListener('load', function () {
+            // Wait for registration to finish before dropping the <script> tag.
+            // Otherwise, the browser will load the script multiple times,
+            // potentially different versions.
+            var serviceWorkerUrl = 'flutter_service_worker.js?v=' + serviceWorkerVersion;
+            navigator.serviceWorker.register(serviceWorkerUrl)
+                .then((reg) => {
+                    function waitForActivation(serviceWorker) {
+                        serviceWorker.addEventListener('statechange', () => {
+                            if (serviceWorker.state == 'activated') {
+                                console.log('Installed new service worker.');
+                                loadMainDartJs();
+                            }
+                        });
+                    }
+
+                    if (!reg.active && (reg.installing || reg.waiting)) {
+                        // No active web worker and we have installed or are installing
+                        // one for the first time. Simply wait for it to activate.
+                        waitForActivation(reg.installing || reg.waiting);
+                    } else if (!reg.active.scriptURL.endsWith(serviceWorkerVersion)) {
+                        // When the app updates the serviceWorkerVersion changes, so we
+                        // need to ask the service worker to update.
+                        console.log('New service worker available.');
+                        reg.update();
+                        waitForActivation(reg.installing);
+                    } else {
+                        // Existing service worker is still good.
+                        console.log('Loading app from service worker.');
+                        loadMainDartJs();
+                    }
+                });
+
+            // If service worker doesn't succeed in a reasonable amount of time,
+            // fallback to plaint <script> tag.
+            setTimeout(() => {
+                if (!scriptLoaded) {
+                    console.warn(
+                        'Failed to load app from service worker. Falling back to plain <script> tag.',
+                    );
+                    loadMainDartJs();
+                }
+            }, 4000);
+        });
+    } else {
+        // Service workers not supported. Just drop the <script> tag.
+        loadMainDartJs();
+    }
+</script>
+<script src="libs/firebase-app.js?8.10.1"></script>
+<script src="libs/firebase-analytics.js?8.10.1"></script>
+
+<script>
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+        apiKey: "AIzaSyCgehIZk1aFP0E7wZtYRRqrfvNiNAF39-A",
+        authDomain: "rustdesk.firebaseapp.com",
+        databaseURL: "https://rustdesk.firebaseio.com",
+        projectId: "rustdesk",
+        storageBucket: "rustdesk.appspot.com",
+        messagingSenderId: "768133699366",
+        appId: "1:768133699366:web:d50faf0792cb208d7993e7",
+        measurementId: "G-9PEH85N6ZQ"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    firebase.analytics();
+</script>
+
+<div id="web-tools" style="position:fixed;top:8px;left:8px;z-index:9999;display:grid;grid-template-columns:1fr 1fr;gap:4px;width:100px;">
+  <button onclick="webShowFunc()">功能</button>
+  <button onclick="webShowExpire()">查询</button>
+  <button onclick="location.reload()">刷新</button>
+  <button onclick="document.getElementById('web-tools').style.display='none'">隐藏</button>
+</div>
+<div id="web-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10000;background:#fff;color:#333;padding:16px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.3);min-width:320px;"></div>
+<div id="web-modal2" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10001;background:#fff;color:#333;padding:16px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.3);min-width:320px;"></div>
+<script>
+(function () {
+  const api = location.origin;
+
+  // ---------- 工具 ----------
+  function curAccount() {
+    try { return JSON.parse(localStorage.getItem('user_info')).name || '' } catch (e) { return '' }
+  }
+
+  function getPeerList() {
+    let peers = {};
+    try { peers = JSON.parse(localStorage.getItem('peers')) || {}; } catch (e) { peers = {}; }
+    return Object.values(peers)
+      .map(p => p && p.info)
+      .filter(info => info && info.id)
+      .map(info => ({ id: info.id, name: info.name || info.hostname || info.id }))
+      .filter((v, i, arr) => arr.findIndex(x => x.id === v.id) === i);
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // ---------- toast（顶部轻提示，自动消失） ----------
+  window.webToast = function (msg) {
+    let t = document.getElementById('web-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'web-toast';
+      t.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:10px 16px;border-radius:6px;z-index:100001;font-size:14px;';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.display = 'block';
+    clearTimeout(t._t);
+    t._t = setTimeout(() => t.style.display = 'none', 2000);
+  };
+
+  // ---------- alert（带确认按钮，点确认后执行回调） ----------
+  window.webAlert = function (msg, onOk) {
+    let a = document.getElementById('web-alert');
+    if (!a) {
+      a = document.createElement('div');
+      a.id = 'web-alert';
+      a.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;color:#333;padding:16px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.3);z-index:100002;min-width:280px;max-width:360px;';
+      document.body.appendChild(a);
+    }
+    a.innerHTML = `
+      <div style="margin-bottom:16px;font-size:14px;line-height:1.6;">${msg}</div>
+      <div style="text-align:right;">
+        <button id="web-alert-ok" style="padding:6px 18px;">确认</button>
+      </div>`;
+    a.style.display = 'block';
+    document.getElementById('web-alert-ok').onclick = function () {
+      a.style.display = 'none';
+      if (typeof onOk === 'function') onOk();
+    };
+  };
+
+  // ---------- 第一步"确认"：弹二次确认，不调接口 ----------
+  window.webConfirmActivate = function () {
+    const account = document.getElementById('wa-account').value;
+    const id = (document.getElementById('wa-id').value || '').trim();
+    const code = (document.getElementById('wa-code').value || '').trim();
+    const kind = document.getElementById('wa-kind').value;
+
+    if (!account) { webToast('请先登录刷新界面'); return; }
+    if (!id) { webToast('请先选择地址簿中的设备 ID'); return; }
+    if (!code) { webToast('激活码必填'); return; }
+
+    window._pendingActivate = { account, id, code, kind };
+
+    const kindText = kind === 'host' ? '托管' : '开通';
+    const m = document.getElementById('web-modal2');
+    m.style.display = 'block';
+    m.innerHTML = `
+      <div style="font-weight:bold;margin-bottom:14px;">再次确认</div>
+      <div style="margin-bottom:8px;line-height:1.8;font-size:14px;">
+        <div>账号：<b>${esc(account)}</b></div>
+        <div>ID：<b>${esc(id)}</b></div>
+        <div>激活码：<b>${esc(code)}</b></div>
+        <div>类别：<b>${kindText}</b></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:16px;">
+        <button onclick="webBackToActivate()" style="flex:1;padding:8px;">取消</button>
+        <button id="wa-confirm-btn" onclick="webDoActivate()" style="flex:1;padding:8px;">确认</button>
+      </div>`;
+  };
+
+  // 二次确认、取消时关第二层、回第一层
+  window.webBackToActivate = function () {
+    const p = window._pendingActivate;
+    if (!p) { document.getElementById('web-modal2').style.display = 'none'; return; }
+    document.getElementById('web-modal2').style.display = 'none';
+    window.webShowFunc('activate');
+    const idSel = document.getElementById('wa-id');
+    if (idSel) idSel.value = p.id;
+    const codeEl = document.getElementById('wa-code');
+    if (codeEl) codeEl.value = p.code;
+    const kindEl = document.getElementById('wa-kind');
+    if (kindEl) kindEl.value = p.kind;
+  };
+
+  // ---------- 二次确认"确认"：调接口 ----------
+  window.webDoActivate = function () {
+    const p = window._pendingActivate;
+    if (!p) { webToast('数据丢失，请重试'); return; }
+
+    if (window._activating) return;
+    window._activating = true;
+
+    const btn = document.getElementById('wa-confirm-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '提交中...'; }
+
+    fetch(api + '/api/activate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: p.code,
+        kind: p.kind,
+        device_id: p.id,
+        account: p.account
+      })
+    })
+      .then(r => r.json())
+      .then(res => {
+        const ok = res && res.code === 'OK';
+        const msg = ok ? '激活成功' : ((res && res.msg) || '激活失败');
+        webAlert(msg, function () {
+          // 用户点确认后：关闭第二层弹窗
+          document.getElementById('web-modal2').style.display = 'none';
+          window._pendingActivate = null;
+        });
+      })
+      .catch(() => {
+        webAlert('激活失败', function () {
+          document.getElementById('web-modal2').style.display = 'none';
+          window._pendingActivate = null;
+        });
+      })
+      .finally(() => { window._activating = false; });
+  };
+
+  // ---------- 功能弹窗（分页：注册/找回密码/激活/添加设备） ----------
+  window.webShowFunc = function (tab) {
+    const m = document.getElementById('web-modal');
+    m.style.display = 'block';
+    const cur = tab || 'activate';
+    const tabs = [
+      { k: 'register', t: '注册' },
+      { k: 'recover', t: '找回密码' },
+      { k: 'activate', t: '激活' },
+      { k: 'adddevice', t: '添加设备' },
+    ];
+    const tabHtml = tabs.map(x =>
+      `<button onclick="webShowFunc('${x.k}')" style="flex:1;padding:6px;${x.k===cur?'background:#024eff;color:#fff;':''}">${x.t}</button>`
+    ).join('');
+    let body = '';
+    if (cur === 'register') {
+      body = `
+        <div style="font-weight:bold;margin-bottom:12px;">账号注册</div>
+        <div style="margin-bottom:8px;">账号：<br><input id="fr-account" style="width:100%;box-sizing:border-box;padding:6px;" /></div>
+        <div style="margin-bottom:8px;">密码：<br><input id="fr-pwd" type="password" style="width:100%;box-sizing:border-box;padding:6px;" /></div>
+        <div style="margin-bottom:8px;">验证密码：<br><input id="fr-pwd2" type="password" style="width:100%;box-sizing:border-box;padding:6px;" /></div>
+        <div style="margin-bottom:8px;">小学名称是什么？：<br><input id="fr-a1" style="width:100%;box-sizing:border-box;padding:6px;" /></div>
+        <div style="margin-bottom:8px;">最爱吃的东西是什么？：<br><input id="fr-a2" style="width:100%;box-sizing:border-box;padding:6px;" /></div>
+        <div style="margin-bottom:8px;">最好的朋友是谁？：<br><input id="fr-a3" style="width:100%;box-sizing:border-box;padding:6px;" /></div>
+        <div style="margin-bottom:12px;">邀请码：<br><input id="fr-invite" style="width:100%;box-sizing:border-box;padding:6px;" /></div>
+        <div style="display:flex;gap:12px;">
+          <button onclick="document.getElementById('web-modal').style.display='none'" style="flex:1;padding:8px;">取消</button>
+          <button onclick="webDoRegister()" style="flex:1;padding:8px;">提交</button>
+        </div>`;
+    } else if (cur === 'recover') {
+      body = `
+        <div style="font-weight:bold;margin-bottom:12px;">找回密码</div>
+        <div style="margin-bottom:8px;">账号：<br><input id="fp-account" style="width:100%;box-sizing:border-box;padding:6px;" /></div>
+        <div style="margin-bottom:8px;">小学名称是什么？：<br><input id="fp-a1" style="width:100%;box-sizing:border-box;padding:6px;" /></div>
+        <div style="margin-bottom:8px;">最爱吃的东西是什么？：<br><input id="fp-a2" style="width:100%;box-sizing:border-box;padding:6px;" /></div>
+        <div style="margin-bottom:8px;">最好的朋友是谁？：<br><input id="fp-a3" style="width:100%;box-sizing:border-box;padding:6px;" /></div>
+        <div style="margin-bottom:12px;">新密码：<br><input id="fp-newpwd" type="password" style="width:100%;box-sizing:border-box;padding:6px;" /></div>
+        <div style="display:flex;gap:12px;">
+          <button onclick="document.getElementById('web-modal').style.display='none'" style="flex:1;padding:8px;">取消</button>
+          <button onclick="webDoRecover()" style="flex:1;padding:8px;">提交</button>
+        </div>`;
+    } else if (cur === 'activate') {
+      body = `
+        <div style="font-weight:bold;margin-bottom:14px;">激活</div>
+        <div style="margin-bottom:12px;">账号：<br>
+          <input id="wa-account" value="${esc(curAccount())}" readonly style="width:100%;box-sizing:border-box;padding:6px;font-size:14px;" />
+        </div>
+        <div style="margin-bottom:12px;">ID：<br>
+          <select id="wa-id" style="width:100%;box-sizing:border-box;padding:6px;font-size:14px;">
+            ${getPeerList().length === 0 ? `<option value="">（地址簿为空，请先同步设备）</option>` : getPeerList().map(p => `<option value="${esc(p.id)}">${esc(p.id)}</option>`).join('')}
+          </select>
+        </div>
+        <div style="margin-bottom:12px;">激活码：<br>
+          <input id="wa-code" style="width:100%;box-sizing:border-box;padding:6px;font-size:14px;" />
+        </div>
+        <div style="margin-bottom:16px;">类别：<br>
+          <select id="wa-kind" style="width:100%;box-sizing:border-box;padding:6px;font-size:14px;">
+            <option value="lease">开通</option>
+            <option value="host">托管</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:12px;">
+          <button onclick="document.getElementById('web-modal').style.display='none'" style="flex:1;padding:8px;">取消</button>
+          <button onclick="webConfirmActivate()" style="flex:1;padding:8px;">确认</button>
+        </div>`;
+    } else if (cur === 'adddevice') {
+      body = `
+        <div style="font-weight:bold;margin-bottom:14px;">添加设备</div>
+        <div style="margin-bottom:12px;">账号：<br>
+          <input id="fa-account" value="${esc(curAccount())}" readonly style="width:100%;box-sizing:border-box;padding:6px;font-size:14px;" />
+        </div>
+        <div style="margin-bottom:8px;color:#024eff;">剩余 <span id="fa-count">-</span> 台</div>
+        <div style="margin-bottom:16px;">添加设备码：<br>
+          <input id="fa-code" style="width:100%;box-sizing:border-box;padding:6px;font-size:14px;" />
+        </div>
+        <div style="display:flex;gap:12px;">
+          <button onclick="document.getElementById('web-modal').style.display='none'" style="flex:1;padding:8px;">取消</button>
+          <button onclick="webDoAddDevice()" style="flex:1;padding:8px;">提交</button>
+        </div>`;
+      fetch(api + '/pending-count').then(r => r.json()).then(res => {
+        const el = document.getElementById('fa-count');
+        if (el) el.textContent = (res && res.data && res.data.count != null) ? res.data.count : '-';
+      }).catch(() => {});
+    }
+    m.innerHTML = `
+      <div style="display:flex;gap:4px;margin-bottom:14px;">${tabHtml}</div>
+      ${body}`;
+  };
+
+  window.webDoRegister = function () {
+    const account = (document.getElementById('fr-account').value || '').trim();
+    const pwd = document.getElementById('fr-pwd').value || '';
+    const pwd2 = document.getElementById('fr-pwd2').value || '';
+    const a1 = document.getElementById('fr-a1').value || '';
+    const a2 = document.getElementById('fr-a2').value || '';
+    const a3 = document.getElementById('fr-a3').value || '';
+    const invite = (document.getElementById('fr-invite').value || '').trim();
+    if (!account || !pwd || !pwd2 || !a1 || !a2 || !a3 || !invite) { webToast('所有格子不能为空'); return; }
+    if (pwd.length < 4) { webToast('密码不能少于4位'); return; }
+    if (pwd !== pwd2) { webToast('两次密码不一致'); return; }
+    fetch(api + '/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: account, password: pwd, answer1: a1, answer2: a2, answer3: a3, invite_code: invite })
+    }).then(r => r.json()).then(res => {
+      const code = res && res.code;
+      let msg = (res && res.msg) || '';
+      if (code === 'OK') msg = '注册成功';
+      else if (code === 'INVITE_ERROR') msg = '邀请码错误';
+      else if (code === 'ERROR' && msg.includes('已存在')) msg = '账号重复';
+      webAlert(msg, function () {
+        if (code === 'OK') document.getElementById('web-modal').style.display = 'none';
+      });
+    }).catch(() => webAlert('注册失败'));
+  };
+
+  window.webDoRecover = function () {
+    const account = (document.getElementById('fp-account').value || '').trim();
+    const a1 = document.getElementById('fp-a1').value || '';
+    const a2 = document.getElementById('fp-a2').value || '';
+    const a3 = document.getElementById('fp-a3').value || '';
+    const newpwd = document.getElementById('fp-newpwd').value || '';
+    if (!account || !a1 || !a2 || !a3 || !newpwd) { webToast('所有格子不能为空'); return; }
+    if (newpwd.length < 4) { webToast('新密码不能少于4位'); return; }
+    fetch(api + '/recover-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: account, answer1: a1, answer2: a2, answer3: a3, new_password: newpwd })
+    }).then(r => r.json()).then(res => {
+      const code = res && res.code;
+      let msg = (res && res.msg) || '';
+      if (code === 'OK') msg = '密码修改成功';
+      webAlert(msg, function () {
+        if (code === 'OK') document.getElementById('web-modal').style.display = 'none';
+      });
+    }).catch(() => webAlert('找回密码失败'));
+  };
+
+  window.webDoAddDevice = function () {
+    const account = document.getElementById('fa-account').value || '';
+    const code = (document.getElementById('fa-code').value || '').trim();
+    if (!account) { webToast('请先登录'); return; }
+    if (!code) { webToast('添加设备码必填'); return; }
+    fetch(api + '/add-device', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: account, device_code: code })
+    }).then(r => r.json()).then(res => {
+      const c = res && res.code;
+      let msg = (res && res.msg) || '';
+      if (c === 'OK') msg = '添加成功';
+      else if (c === 'CODE_ERROR') msg = '添加设备码不对';
+      else if (c === 'EMPTY') msg = '设备库正在补充，请耐心等待';
+      webAlert(msg, function () {
+        if (c === 'OK') document.getElementById('web-modal').style.display = 'none';
+      });
+    }).catch(() => webAlert('添加设备失败'));
+  };
+
+  // ---------- 查询弹窗 ----------
+  window.webShowExpire = function () {
+    let peers = {};
+    try { peers = JSON.parse(localStorage.getItem('peers')) || {}; } catch (e) {}
+    const ids = Object.values(peers).map(p => p.info && p.info.id).filter(Boolean);
+    const m = document.getElementById('web-modal');
+    m.style.display = 'block';
+    m.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;color:#333;">有效期</div>
+      <div id="we-list" style="color:#333;">查询中...</div>
+      <div style="text-align:right;margin-top:10px;"><button onclick="document.getElementById('web-modal').style.display='none'">关闭</button></div>`;
+    const now = Math.floor(Date.now() / 1000);
+    const lines = [];
+    let i = 0;
+    function next() {
+      if (i >= ids.length) {
+        const el = document.getElementById('we-list');
+        if (el) el.innerHTML = lines.join('') || '无设备';
+        return;
+      }
+      const id = ids[i++];
+      fetch(api + '/api/device/info?device_id=' + encodeURIComponent(id))
+        .then(r => r.json()).then(r => {
+          const fmt = (t) => {
+            if (!r || r.code !== 'OK') return '';
+            if (!t) return '未激活';
+            const days = Math.ceil((t - now) / 86400);
+            if (t < now) return '已到期';
+            const txt = days + '天';
+            return days <= 3 ? `<span style="color:red">${txt}</span>` : txt;
+          };
+          lines.push(`<div style="margin:2px 0;">${id}　开通:${fmt(r.lease_expire)}　托管:${fmt(r.host_expire)}</div>`);
+        }).catch(() => {}).then(next);
+    }
+    next();
+  };
+})();
+</script>
+<div id="cursor-layer" style="position:fixed;inset:0;z-index:9998;cursor:default;"></div>
+<script>
+(function () {
+  const layer = document.getElementById('cursor-layer');
+  function glass() {
+    return document.querySelector('flt-glass-pane') || document.querySelector('flt-glass-pane *') || document.querySelector('flt-scene-host');
+  }
+  function forward(e) {
+    const g = glass();
+    if (!g) return;
+    const ev = new PointerEvent(e.type, {
+      bubbles: true, cancelable: true, composed: true,
+      pointerId: e.pointerId, pointerType: e.pointerType,
+      clientX: e.clientX, clientY: e.clientY,
+      button: e.button, buttons: e.buttons,
+      ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, metaKey: e.metaKey
+    });
+    g.dispatchEvent(ev);
+  }
+  ['pointerdown','pointerup','pointermove','pointercancel'].forEach(t => layer.addEventListener(t, forward, {passive:false}));
+  layer.addEventListener('wheel', e => {
+    const g = glass();
+    if (!g) return;
+    g.dispatchEvent(new WheelEvent('wheel', {bubbles:true, cancelable:true, composed:true, deltaX:e.deltaX, deltaY:e.deltaY, clientX:e.clientX, clientY:e.clientY}));
+  }, {passive:false});
+  layer.addEventListener('contextmenu', e => {
+    const g = glass();
+    if (!g) return;
+    g.dispatchEvent(new MouseEvent('contextmenu', {bubbles:true, cancelable:true, composed:true, clientX:e.clientX, clientY:e.clientY, button:e.button}));
+  });
+})();
+</script>
+</body>
+
+</html>

@@ -1,0 +1,477 @@
+C:\USERS\LEE\DESKTOP\LEJIANWEN源码\RUSTDESK-API-2.7
+|   .dockerignore
+|   .gitattributes
+|   .gitignore
+|   build.bat
+|   build.sh
+|   docker-compose-dev.yaml
+|   docker-compose.yaml
+|   docker-dev.sh
+|   Dockerfile
+|   Dockerfile.dev
+|   Dockerfile_full_s6
+|   generate_api.go
+|   generate_run.go
+|   go.mod
+|   LICENSE
+|   README.md
+|   README_EN.md
+|
++---.github
+|   \---workflows
+|           build.yml
+|           build_test.yml
+|
++---cmd
+|       apimain.go
+|
++---conf
+|   |   config.yaml
+|   |
+|   \---admin
+|           hello.html
+|
++---config
+|       cache.go
+|       config.go
+|       gin.go
+|       gorm.go
+|       jwt.go
+|       ldap.go
+|       logger.go
+|       oauth.go
+|       oss.go
+|       proxy.go
+|       redis.go
+|       rustdesk.go
+|
++---data
+|       .gitkeep
+|
++---debian
+|   |   changelog
+|   |   compat
+|   |   control.tpl
+|   |   copyright
+|   |   rules
+|   |   rustdesk-api-server.install
+|   |   rustdesk-api-server.postinst
+|   |   rustdesk-api-server.postrm
+|   |   rustdesk-api-server.prerm
+|   |
+|   \---source
+|           format
+|
++---docs
+|   |   admin_webclient.png
+|   |   api_swag.png
+|   |   init_admin_pwd.png
+|   |   pc_ab.png
+|   |   pc_gr.png
+|   |   pc_login.png
+|   |   rustdesk_command_advance.png
+|   |   rustdesk_command_simple.png
+|   |   webclientv2.png
+|   |   web_admin.png
+|   |   web_admin_gr.png
+|   |   web_admin_oauth.png
+|   |   web_admin_user.png
+|   |   web_resetpwd.png
+|   |
+|   +---admin
+|   |       admin_docs.go
+|   |       admin_swagger.json
+|   |       admin_swagger.yaml
+|   |
+|   +---api
+|   |       api_docs.go
+|   |       api_swagger.json
+|   |       api_swagger.yaml
+|   |
+|   \---en_img
+|           admin_webclient.png
+|           pc_ab.png
+|           pc_gr.png
+|           pc_login.png
+|           rustdesk_command_advance.png
+|           rustdesk_command_simple.png
+|           web_admin.png
+|           web_admin_gr.png
+|           web_admin_oauth.png
+|           web_admin_user.png
+|           web_resetpwd.png
+|
++---global
+|       apiValidator.go
+|       global.go
+|       i18n.go
+|
++---http
+|   |   http.go
+|   |   run.go
+|   |   run_win.go
+|   |
+|   +---controller
+|   |   +---admin
+|   |   |   |   addressBook.go
+|   |   |   |   addressBookCollection.go
+|   |   |   |   addressBookCollectionRule.go
+|   |   |   |   audit.go
+|   |   |   |   config.go
+|   |   |   |   deviceGroup.go
+|   |   |   |   file.go
+|   |   |   |   group.go
+|   |   |   |   login.go
+|   |   |   |   loginLog.go
+|   |   |   |   oauth.go
+|   |   |   |   peer.go
+|   |   |   |   rustdesk.go
+|   |   |   |   shareRecord.go
+|   |   |   |   tag.go
+|   |   |   |   user.go
+|   |   |   |   userToken.go
+|   |   |   |
+|   |   |   \---my
+|   |   |           addressBook.go
+|   |   |           addressBookCollection.go
+|   |   |           addressBookCollectionRule.go
+|   |   |           loginLog.go
+|   |   |           peer.go
+|   |   |           shareRecord.go
+|   |   |           tag.go
+|   |   |
+|   |   +---api
+|   |   |       ab.go
+|   |   |       audit.go
+|   |   |       group.go
+|   |   |       index.go
+|   |   |       login.go
+|   |   |       ouath.go
+|   |   |       peer.go
+|   |   |       user.go
+|   |   |       webClient.go
+|   |   |
+|   |   \---web
+|   |           index.go
+|   |
+|   +---middleware
+|   |       admin.go
+|   |       admin_privilege.go
+|   |       cors.go
+|   |       jwt.go
+|   |       limiter.go
+|   |       logger.go
+|   |       rustauth.go
+|   |
+|   +---request
+|   |   +---admin
+|   |   |       addressBook.go
+|   |   |       audit.go
+|   |   |       group.go
+|   |   |       login.go
+|   |   |       oauth.go
+|   |   |       peer.go
+|   |   |       shareRecord.go
+|   |   |       tag.go
+|   |   |       user.go
+|   |   |
+|   |   \---api
+|   |           audit.go
+|   |           oauth.go
+|   |           peer.go
+|   |           user.go
+|   |
+|   +---response
+|   |   |   response.go
+|   |   |
+|   |   +---admin
+|   |   |       user.go
+|   |   |
+|   |   \---api
+|   |           ab.go
+|   |           peer.go
+|   |           user.go
+|   |           webClient.go
+|   |
+|   \---router
+|           admin.go
+|           api.go
+|           router.go
+|
++---lib
+|   +---cache
+|   |       cache.go
+|   |       cache_test.go
+|   |       file.go
+|   |       file_test.go
+|   |       memory.go
+|   |       memory_test.go
+|   |       redis.go
+|   |       redis_test.go
+|   |       simple_cache.go
+|   |       simple_cache_test.go
+|   |
+|   +---jwt
+|   |       jwt.go
+|   |       jwt_test.go
+|   |
+|   +---lock
+|   |       local.go
+|   |       local_test.go
+|   |       lock.go
+|   |
+|   +---logger
+|   |       logger.go
+|   |
+|   +---orm
+|   |       mysql.go
+|   |       postgresql.go
+|   |       sqlite.go
+|   |
+|   \---upload
+|           local.go
+|           oss.go
+|
++---model
+|   |   addressBook.go
+|   |   audit.go
+|   |   group.go
+|   |   loginLog.go
+|   |   model.go
+|   |   oauth.go
+|   |   peer.go
+|   |   serverCmd.go
+|   |   shareRecord.go
+|   |   tag.go
+|   |   user.go
+|   |   userThird.go
+|   |   userToken.go
+|   |   version.go
+|   |
+|   \---custom_types
+|           auto_json.go
+|           auto_time.go
+|
++---resources
+|   |   version
+|   |
+|   +---i18n
+|   |       en.toml
+|   |       es.toml
+|   |       fr.toml
+|   |       ko.toml
+|   |       ru.toml
+|   |       zh_CN.toml
+|   |       zh_TW.toml
+|   |
+|   +---public
+|   |   \---upload
+|   |           .gitkeep
+|   |
+|   +---templates
+|   |       oauth_fail.html
+|   |       oauth_success.html
+|   |
+|   \---web
+|       |   .gitignore
+|       |   .last_build_id
+|       |   favicon.svg
+|       |   flutter_service_worker.js
+|       |   index.html
+|       |   libopus.js
+|       |   libopus.wasm
+|       |   main.dart.js
+|       |   manifest.json
+|       |   start-server.bat
+|       |   version.json
+|       |   web_deps.tar.gz
+|       |   yarn.lock
+|       |   yuv-canvas-1.2.6.js
+|       |   yuv.js
+|       |   yuv.wasm
+|       |
+|       +---assets
+|       |   |   AssetManifest.json
+|       |   |   FontManifest.json
+|       |   |   NOTICES
+|       |   |
+|       |   +---assets
+|       |   |       android.png
+|       |   |       gestures.ttf
+|       |   |       insecure.png
+|       |   |       insecure_relay.png
+|       |   |       linux.png
+|       |   |       mac.png
+|       |   |       secure.png
+|       |   |       secure_relay.png
+|       |   |       win.png
+|       |   |
+|       |   +---fonts
+|       |   |       MaterialIcons-Regular.otf
+|       |   |
+|       |   \---packages
+|       |       +---cupertino_icons
+|       |       |   \---assets
+|       |       |           CupertinoIcons.ttf
+|       |       |
+|       |       \---wakelock_web
+|       |           \---assets
+|       |                   no_sleep.js
+|       |
+|       +---icons
+|       |       Icon-192.png
+|       |       Icon-512.png
+|       |       Icon-maskable-192.png
+|       |       Icon-maskable-512.png
+|       |
+|       +---js
+|       |   |   .gitattributes
+|       |   |   .gitignore
+|       |   |   .yarnrc.yml
+|       |   |   gen_js_from_hbb.py
+|       |   |   index.html
+|       |   |   package-lock.json
+|       |   |   package.json
+|       |   |   tsconfig.json
+|       |   |   ts_proto.py
+|       |   |   vite.config.js
+|       |   |   yarn.lock
+|       |   |
+|       |   +---dist
+|       |   |       index.css
+|       |   |       index.html
+|       |   |       index.js
+|       |   |       vendor.js
+|       |   |
+|       |   \---src
+|       |           codec.js
+|       |           common.ts
+|       |           connection.ts
+|       |           gen_js_from_hbb.ts
+|       |           globals.js
+|       |           ljw.js
+|       |           main.ts
+|       |           message.ts
+|       |           rendezvous.ts
+|       |           style.css
+|       |           ui.js
+|       |           vite-env.d.ts
+|       |           websock.ts
+|       |
+|       +---libs
+|       |       firebase-analytics.js
+|       |       firebase-app.js
+|       |
+|       \---ogvjs-1.8.6
+|               COPYING
+|               COPYING-dav1d.txt
+|               COPYING-ogg.txt
+|               COPYING-opus.txt
+|               COPYING-theora.txt
+|               COPYING-vorbis.txt
+|               LICENSE-nestegg.txt
+|               LICENSE-vpx.txt
+|               ogv-decoder-audio-opus-wasm.js
+|               ogv-decoder-audio-opus-wasm.wasm
+|               ogv-decoder-audio-vorbis-wasm.js
+|               ogv-decoder-audio-vorbis-wasm.wasm
+|               ogv-decoder-video-av1-mt-wasm.js
+|               ogv-decoder-video-av1-mt-wasm.wasm
+|               ogv-decoder-video-av1-mt-wasm.worker.js
+|               ogv-decoder-video-av1-simd-mt-wasm.js
+|               ogv-decoder-video-av1-simd-mt-wasm.wasm
+|               ogv-decoder-video-av1-simd-mt-wasm.worker.js
+|               ogv-decoder-video-av1-simd-wasm.js
+|               ogv-decoder-video-av1-simd-wasm.wasm
+|               ogv-decoder-video-av1-wasm.js
+|               ogv-decoder-video-av1-wasm.wasm
+|               ogv-decoder-video-theora-wasm.js
+|               ogv-decoder-video-theora-wasm.wasm
+|               ogv-decoder-video-vp8-mt-wasm.js
+|               ogv-decoder-video-vp8-mt-wasm.wasm
+|               ogv-decoder-video-vp8-mt-wasm.worker.js
+|               ogv-decoder-video-vp8-wasm.js
+|               ogv-decoder-video-vp8-wasm.wasm
+|               ogv-decoder-video-vp9-mt-wasm.js
+|               ogv-decoder-video-vp9-mt-wasm.wasm
+|               ogv-decoder-video-vp9-mt-wasm.worker.js
+|               ogv-decoder-video-vp9-simd-mt-wasm.js
+|               ogv-decoder-video-vp9-simd-mt-wasm.wasm
+|               ogv-decoder-video-vp9-simd-mt-wasm.worker.js
+|               ogv-decoder-video-vp9-simd-wasm.js
+|               ogv-decoder-video-vp9-simd-wasm.wasm
+|               ogv-decoder-video-vp9-wasm.js
+|               ogv-decoder-video-vp9-wasm.wasm
+|               ogv-demuxer-ogg-wasm.js
+|               ogv-demuxer-ogg-wasm.wasm
+|               ogv-demuxer-webm-wasm.js
+|               ogv-demuxer-webm-wasm.wasm
+|               ogv-es2017.js
+|               ogv-support.js
+|               ogv-version.js
+|               ogv-worker-audio.js
+|               ogv-worker-video.js
+|               ogv.js
+|               PATENTS-vpx.txt
+|               README.md
+|
++---runtime
+|   \---cache
+|           .gitkeep
+|
++---service
+|       addressBook.go
+|       app.go
+|       app_test.go
+|       audit.go
+|       group.go
+|       ldap.go
+|       loginLog.go
+|       oauth.go
+|       peer.go
+|       serverCmd.go
+|       service.go
+|       shareRecord.go
+|       tag.go
+|       user.go
+|
++---systemd
+|       rustdesk-api.service
+|
+\---utils
+        captcha.go
+        login_limiter.go
+        login_limiter_test.go
+        password.go
+        password_test.go
+        tools.go
+
+卷 Local Disk 的文件夹 PATH 列表
+卷序列号为 E2FD-C8B6
+C:\USERS\LEE\DESKTOP\LEJIANWEN源码\RUSTDESK-API-2.7\MODEL
+|   addressBook.go
+|   audit.go
+|   group.go
+|   loginLog.go
+|   model.go
+|   oauth.go
+|   peer.go
+|   serverCmd.go
+|   shareRecord.go
+|   tag.go
+|   user.go
+|   userThird.go
+|   userToken.go
+|   version.go
+|
+\---custom_types
+        auto_json.go
+        auto_time.go
+
+卷 Local Disk 的文件夹 PATH 列表
+卷序列号为 E2FD-C8B6
+C:\USERS\LEE\DESKTOP\LEJIANWEN源码\RUSTDESK-API-2.7\API
+无效的路径 - \USERS\LEE\DESKTOP\LEJIANWEN源码\RUSTDESK-API-2.7\API
+没有子文件夹
+
+PS C:\Users\lee\Desktop\lejianwen源码\rustdesk-api-2.7>

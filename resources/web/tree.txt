@@ -1,0 +1,142 @@
+C:.
+│  .gitignore
+│  .last_build_id
+│  favicon.svg
+│  flutter_service_worker.js
+│  index.html
+│  libopus.js
+│  libopus.wasm
+│  main.dart.js
+│  manifest.json
+│  start-server.bat
+│  version.json
+│  web_deps.tar.gz
+│  yarn.lock
+│  yuv-canvas-1.2.6.js
+│  yuv.js
+│  yuv.wasm
+│
+├─assets
+│  │  AssetManifest.json
+│  │  FontManifest.json
+│  │  NOTICES
+│  │
+│  ├─assets
+│  │      android.png
+│  │      gestures.ttf
+│  │      insecure.png
+│  │      insecure_relay.png
+│  │      linux.png
+│  │      mac.png
+│  │      secure.png
+│  │      secure_relay.png
+│  │      win.png
+│  │
+│  ├─fonts
+│  │      MaterialIcons-Regular.otf
+│  │
+│  └─packages
+│      ├─cupertino_icons
+│      │  └─assets
+│      │          CupertinoIcons.ttf
+│      │
+│      └─wakelock_web
+│          └─assets
+│                  no_sleep.js
+│
+├─icons
+│      Icon-192.png
+│      Icon-512.png
+│      Icon-maskable-192.png
+│      Icon-maskable-512.png
+│
+├─js
+│  │  .gitattributes
+│  │  .gitignore
+│  │  .yarnrc.yml
+│  │  gen_js_from_hbb.py
+│  │  index.html
+│  │  package-lock.json
+│  │  package.json
+│  │  tsconfig.json
+│  │  ts_proto.py
+│  │  vite.config.js
+│  │  yarn.lock
+│  │
+│  ├─dist
+│  │      index.css
+│  │      index.html
+│  │      index.js
+│  │      vendor.js
+│  │
+│  └─src
+│          codec.js
+│          common.ts
+│          connection.ts
+│          gen_js_from_hbb.ts
+│          globals.js
+│          ljw.js
+│          main.ts
+│          message.ts
+│          rendezvous.ts
+│          style.css
+│          ui.js
+│          vite-env.d.ts
+│          websock.ts
+│
+├─libs
+│      firebase-analytics.js
+│      firebase-app.js
+│
+└─ogvjs-1.8.6
+        COPYING
+        COPYING-dav1d.txt
+        COPYING-ogg.txt
+        COPYING-opus.txt
+        COPYING-theora.txt
+        COPYING-vorbis.txt
+        LICENSE-nestegg.txt
+        LICENSE-vpx.txt
+        ogv-decoder-audio-opus-wasm.js
+        ogv-decoder-audio-opus-wasm.wasm
+        ogv-decoder-audio-vorbis-wasm.js
+        ogv-decoder-audio-vorbis-wasm.wasm
+        ogv-decoder-video-av1-mt-wasm.js
+        ogv-decoder-video-av1-mt-wasm.wasm
+        ogv-decoder-video-av1-mt-wasm.worker.js
+        ogv-decoder-video-av1-simd-mt-wasm.js
+        ogv-decoder-video-av1-simd-mt-wasm.wasm
+        ogv-decoder-video-av1-simd-mt-wasm.worker.js
+        ogv-decoder-video-av1-simd-wasm.js
+        ogv-decoder-video-av1-simd-wasm.wasm
+        ogv-decoder-video-av1-wasm.js
+        ogv-decoder-video-av1-wasm.wasm
+        ogv-decoder-video-theora-wasm.js
+        ogv-decoder-video-theora-wasm.wasm
+        ogv-decoder-video-vp8-mt-wasm.js
+        ogv-decoder-video-vp8-mt-wasm.wasm
+        ogv-decoder-video-vp8-mt-wasm.worker.js
+        ogv-decoder-video-vp8-wasm.js
+        ogv-decoder-video-vp8-wasm.wasm
+        ogv-decoder-video-vp9-mt-wasm.js
+        ogv-decoder-video-vp9-mt-wasm.wasm
+        ogv-decoder-video-vp9-mt-wasm.worker.js
+        ogv-decoder-video-vp9-simd-mt-wasm.js
+        ogv-decoder-video-vp9-simd-mt-wasm.wasm
+        ogv-decoder-video-vp9-simd-mt-wasm.worker.js
+        ogv-decoder-video-vp9-simd-wasm.js
+        ogv-decoder-video-vp9-simd-wasm.wasm
+        ogv-decoder-video-vp9-wasm.js
+        ogv-decoder-video-vp9-wasm.wasm
+        ogv-demuxer-ogg-wasm.js
+        ogv-demuxer-ogg-wasm.wasm
+        ogv-demuxer-webm-wasm.js
+        ogv-demuxer-webm-wasm.wasm
+        ogv-es2017.js
+        ogv-support.js
+        ogv-version.js
+        ogv-worker-audio.js
+        ogv-worker-video.js
+        ogv.js
+        PATENTS-vpx.txt
+        README.md
