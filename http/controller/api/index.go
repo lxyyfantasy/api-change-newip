@@ -60,14 +60,10 @@ func (i *Index) Heartbeat(c *gin.Context) {
         c.JSON(http.StatusOK, gin.H{})
         return
     }
-    //如果在40s以内则不更新
+    // 如果在30s以内则不更新
     if time.Now().Unix()-peer.LastOnlineTime >= 30 {
         upp := &model.Peer{RowId: peer.RowId, LastOnlineTime: time.Now().Unix(), LastOnlineIp: c.ClientIP()}
         service.AllService.PeerService.Update(upp)
-    }
-    } else {
-        // 没有活跃连接：清空连接方式
-        service.AllService.PeerService.SetConnectTypeById(info.Id, "")
     }
     c.JSON(http.StatusOK, gin.H{})
 }
