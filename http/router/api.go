@@ -50,6 +50,7 @@ func ApiInit(g *gin.Engine) {
             frg.GET("/peer/all", ac.PeerAll)
             frg.GET("/orphan-host/pull", ac.PullOrphanHost)
             frg.GET("/lease-host/ips", ac.LeaseHostIps)
+            frg.POST("/connect/report", ac.ReportConnect)
             frg.GET("/server-config", ac.ServerConfig)
         }
     }

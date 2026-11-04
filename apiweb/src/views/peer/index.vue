@@ -99,6 +99,13 @@
             </template>
           </el-table-column>
 		  <el-table-column v-if="c.name==='category'" prop="category" label="分类" align="center" width="110"/>
+          <el-table-column v-if="c.name==='connect_type'" prop="connect_type" label="连接" align="center" width="100">
+            <template #default="{row}">
+              <span v-if="row.connect_type==='direct'">P2P</span>
+              <span v-else-if="row.connect_type==='relay'">中继</span>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
           <el-table-column v-if="c.name==='lease_expire_at'" prop="lease_expire_at" label="开通有效期" align="center" width="160">
             <template #default="{row}">{{ fmtTime(row.lease_expire_at) }}</template>
           </el-table-column>
@@ -858,6 +865,7 @@
     // ===== 新增 14 列 =====
     { name: 'account', visible: true, label: '账号归属' },
 	{ name: 'category', visible: true, label: '分类' },
+    { name: 'connect_type', visible: true, label: '连接' },
     { name: 'lease_expire_at', visible: true, label: '开通有效期' },
     { name: 'host_expire_at', visible: true, label: '托管有效期' },
     { name: 'lan_ip', visible: true, label: '局域网ip' },

@@ -30,6 +30,7 @@ type Peer struct {
     HostCode      string `json:"host_code" gorm:"default:'';not null;"`
     HostDays      int    `json:"host_days" gorm:"default:0;not null;"`
     HostAt        int64  `json:"host_at" gorm:"default:0;not null;"`
+	ConnectType   string `json:"connect_type" gorm:"default:'';not null;"`
     TimeModel
 }
 
