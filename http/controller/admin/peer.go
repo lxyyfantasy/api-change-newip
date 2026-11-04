@@ -241,3 +241,42 @@ func (ct *Peer) SimpleData(c *gin.Context) {
 	})
 	response.Success(c, res)
 }
+
+type PeerServerIpForm struct {
+	Id       string `json:"id"`
+	ServerIp string `json:"server_ip"`
+}
+
+// SetServerIp 设置设备服务器ip
+// @Tags 设备
+// @Summary 设置设备服务器ip
+// @Description 设置设备服务器ip
+// @Accept  json
+// @Produce  json
+// @Param body body admin.PeerServerIpForm true "设备ID和服务器IP"
+// @Success 200 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /admin/peer/setServerIp [post]
+// @Security token
+func (ct *Peer) SetServerIp(c *gin.Context) {
+	f := &PeerServerIpForm{}
+	if err := c.ShouldBindJSON(f); err != nil {
+		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		return
+	}
+	if f.Id == "" {
+		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError"))
+		return
+	}
+	pe := service.AllService.PeerService.FindById(f.Id)
+	if pe.RowId == 0 {
+		response.Fail(c, 101, response.TranslateMsg(c, "ItemNotFound"))
+		return
+	}
+	err := service.AllService.PeerService.SetServerIpById(f.Id, f.ServerIp)
+	if err != nil {
+		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		return
+	}
+	response.Success(c, nil)
+}

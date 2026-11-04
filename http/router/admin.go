@@ -160,6 +160,7 @@ func PeerBind(rg *gin.RouterGroup) {
         aR.POST("/update", cont.Update)
         aR.POST("/delete", cont.Delete)
         aR.POST("/batchDelete", cont.BatchDelete)
+		aR.POST("/setServerIp", cont.SetServerIp)
     }
 }
 

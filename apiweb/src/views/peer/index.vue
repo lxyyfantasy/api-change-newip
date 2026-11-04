@@ -61,6 +61,7 @@
           <el-button @click="openServerConfig">修改网络参数</el-button>
           <el-button @click="openTakeCodes">获取激活码</el-button>
           <el-button @click="openPending">待分配设备</el-button>
+		  <el-button @click="serverIpVisible = true">设置服务器IP</el-button>
           <el-select v-model="listFilter" placeholder="筛选设备" style="width:160px;margin-left:8px" @change="applyListFilter">
             <el-option label="全部设备" value="all" />
             <el-option label="在线设备" value="online" />
@@ -99,6 +100,7 @@
             </template>
           </el-table-column>
           <el-table-column v-if="c.name==='category'" prop="category" label="分类" align="center" width="110"/>
+		  <el-table-column v-if="c.name==='server_ip'" prop="server_ip" label="服务器" align="center" width="140"/>
           <el-table-column v-if="c.name==='connect_type'" prop="connect_type" label="连接" align="center" width="100">
             <template #default="{row}">
               <span v-if="row.connect_type==='direct'">P2P</span>
@@ -202,6 +204,9 @@
         <el-form-item :label="T('Alias')" prop="alias">
           <el-input v-model="formData.alias"></el-input>
         </el-form-item>
+		<el-form-item label="服务器" prop="server_ip">
+		  <el-input v-model="formData.server_ip"></el-input>
+		</el-form-item>
         <el-form-item>
           <el-button @click="formVisible = false">{{ T('Cancel') }}</el-button>
           <el-button @click="submit" type="primary">{{ T('Submit') }}</el-button>
@@ -345,12 +350,26 @@
         <el-button @click="pendingVisible = false">关闭</el-button>
       </template>
     </el-dialog>
+	<el-dialog v-model="serverIpVisible" title="设置服务器IP" width="420">
+	  <el-form label-width="90px">
+	    <el-form-item label="设备ID">
+	      <el-input v-model="serverIpForm.id" placeholder="输入设备ID"/>
+	    </el-form-item>
+	    <el-form-item label="服务器IP">
+	      <el-input v-model="serverIpForm.server_ip" placeholder="ipv4，留空则清除"/>
+	    </el-form-item>
+	  </el-form>
+	  <template #footer>
+	    <el-button @click="serverIpVisible = false">取消</el-button>
+	    <el-button type="primary" @click="doSetServerIp">确定</el-button>
+	  </template>
+	</el-dialog>
   </div>
 </template>
 
 <script setup>
   import { computed, onActivated, onMounted, reactive, ref, watch } from 'vue'
-  import { all, batchRemove, create, list, remove, update, serverConfigGet, serverConfigPut, takeCodes, removedDevices, removedAccounts, usedCodes, pendingList, pendingAdd, pendingDelete, assignedList } from '@/api/peer'
+    import { all, batchRemove, create, list, remove, update, serverConfigGet, serverConfigPut, takeCodes, removedDevices, removedAccounts, usedCodes, pendingList, pendingAdd, pendingDelete, assignedList, setServerIp } from '@/api/peer'
   import { list as groupList } from '@/api/device_group'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { toWebClientLink } from '@/utils/webclient'
@@ -668,6 +687,7 @@
     username: '',
     uuid: '',
     version: '',
+	server_ip: '',
   })
 
   const toEdit = (row) => {
@@ -689,6 +709,7 @@
     formData.username = ''
     formData.uuid = ''
     formData.version = ''
+	formData.server_ip = ''
   }
   const submit = async () => {
     const api = formData.row_id ? update : create
@@ -866,6 +887,7 @@
     // ===== 新增 14 列 =====
     { name: 'account', visible: true, label: '账号归属' },
     { name: 'category', visible: true, label: '分类' },
+	{ name: 'server_ip', visible: true, label: '服务器' },
     { name: 'connect_type', visible: true, label: '连接' },
     { name: 'lease_expire_at', visible: true, label: '开通有效期' },
     { name: 'host_expire_at', visible: true, label: '托管有效期' },
@@ -917,6 +939,23 @@
     visibleColumns.value.splice(index, 1)
     visibleColumns.value.splice(index + 1, 0, col)
 
+  }
+
+  const serverIpVisible = ref(false)
+  const serverIpForm = reactive({ id: '', server_ip: '' })
+  const doSetServerIp = async () => {
+    if (!serverIpForm.id) {
+      ElMessage.warning('请输入设备ID')
+      return
+    }
+    const res = await setServerIp({ ...serverIpForm }).catch(_ => false)
+    if (res) {
+      ElMessage.success('设置成功')
+      serverIpVisible.value = false
+      serverIpForm.id = ''
+      serverIpForm.server_ip = ''
+      getList()
+    }
   }
 </script>
 

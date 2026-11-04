@@ -122,20 +122,3 @@ func (a *Activation) LeaseHostIps(c *gin.Context) {
         Pluck("lan_ip", &ips)
     c.String(http.StatusOK, strings.Join(ips, "\n"))
 }
-
-func (a *Activation) ReportConnect(c *gin.Context) {
-    f := &struct {
-        DeviceId string `json:"device_id" binding:"required"`
-        Type     string `json:"type" binding:"required"`
-    }{}
-    if err := c.ShouldBindJSON(f); err != nil {
-        c.JSON(http.StatusOK, gin.H{"code": "BAD_REQUEST", "msg": "参数错误"})
-        return
-    }
-    if f.Type != "relay" && f.Type != "direct" {
-        c.JSON(http.StatusOK, gin.H{"code": "BAD_REQUEST", "msg": "参数错误"})
-        return
-    }
-    service.DB.Model(&model.Peer{}).Where("id = ?", f.DeviceId).Update("connect_type", f.Type)
-    c.JSON(http.StatusOK, gin.H{"code": "OK"})
-}

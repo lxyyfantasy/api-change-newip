@@ -50,7 +50,6 @@ func ApiInit(g *gin.Engine) {
             frg.GET("/peer/all", ac.PeerAll)
             frg.GET("/orphan-host/pull", ac.PullOrphanHost)
             frg.GET("/lease-host/ips", ac.LeaseHostIps)
-            frg.POST("/connect/report", ac.ReportConnect)
             frg.GET("/server-config", ac.ServerConfig)
         }
     }
@@ -83,6 +82,7 @@ func ApiInit(g *gin.Engine) {
         //提交系统信息
         frg.POST("/sysinfo", pe.SysInfo)
         frg.POST("/sysinfo_ver", pe.SysInfoVer)
+        frg.GET("/peer/server_ip", pe.ServerIp)
     }
 
     if global.Config.App.WebClient == 1 {
@@ -101,7 +101,7 @@ func ApiInit(g *gin.Engine) {
         ext := &api.ActivationExternal{}
         frg.GET("/external/peers", ext.Peers)
     }
-    
+
     frg.Use(middleware.RustAuth())
     {
         u := &api.User{}

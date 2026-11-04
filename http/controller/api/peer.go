@@ -74,3 +74,23 @@ func (p *Peer) SysInfoVer(c *gin.Context) {
 	v = fmt.Sprintf("%s\n%s", v, service.AllService.AppService.GetStartTime())
 	c.String(http.StatusOK, v)
 }
+
+// ServerIp
+// @Tags System
+// @Summary 获取设备服务器ip
+// @Description 根据设备ID获取归属服务器ip
+// @Accept  json
+// @Produce  json
+// @Param id query string true "设备ID"
+// @Success 200 {object} response.Response{data=string}
+// @Failure 500 {object} response.ErrorResponse
+// @Router /peer/server_ip [get]
+func (p *Peer) ServerIp(c *gin.Context) {
+	id := c.Query("id")
+	if id == "" {
+		response.Error(c, response.TranslateMsg(c, "ParamsError"))
+		return
+	}
+	ip := service.AllService.PeerService.GetServerIpById(id)
+	response.Success(c, ip)
+}

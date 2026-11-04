@@ -58,3 +58,6 @@ export function pendingDelete (data) {
 export function assignedList () {
   return request({ url: '/assigned/list' })
 }
+export function setServerIp (data) {
+  return request({ url: '/peer/setServerIp', method: 'post', data })
+}

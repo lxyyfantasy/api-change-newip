@@ -65,17 +65,10 @@ func (i *Index) Heartbeat(c *gin.Context) {
         upp := &model.Peer{RowId: peer.RowId, LastOnlineTime: time.Now().Unix(), LastOnlineIp: c.ClientIP()}
         service.AllService.PeerService.Update(upp)
     }
-    // 清理超时未心跳设备的连接状态
-    now := time.Now().Unix()
-    service.DB.Model(&model.Peer{}).
-        Where("last_online_time < ?", now-180).
-        Where("connect_type <> ''").
-        Update("connect_type", "")
-    // 在线但没有连接类型的，视为 IP 直连
-    service.DB.Model(&model.Peer{}).
-        Where("last_online_time >= ?", now-180).
-        Where("connect_type = ''").
-        Update("connect_type", "ip")
+    } else {
+        // 没有活跃连接：清空连接方式
+        service.AllService.PeerService.SetConnectTypeById(info.Id, "")
+    }
     c.JSON(http.StatusOK, gin.H{})
 }
 

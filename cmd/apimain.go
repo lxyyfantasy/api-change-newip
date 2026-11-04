@@ -212,6 +212,22 @@ func InitGlobal() {
     global.LoginLimiter.RegisterProvider(utils.B64StringCaptchaProvider{})
     DatabaseAutoUpdate()
     service.AllService.ActivationService.RebuildOrphanHost()
+    if global.Config.App.DbCleanupEnabled {
+        interval := global.Config.App.DbCleanupIntervalHours
+        if interval <= 0 {
+            interval = 24
+        }
+        global.Logger.Infof("server db cleanup enabled, interval %dh", interval)
+        go func() {
+            time.Sleep(time.Duration(interval) * time.Hour)
+            for {
+                cleanupServerRegistry()
+                time.Sleep(time.Duration(interval) * time.Hour)
+            }
+        }()
+    } else {
+        global.Logger.Info("server db cleanup disabled")
+    }
     go func() {
         time.Sleep(10 * time.Second)
         for {
@@ -401,4 +417,16 @@ func Migrate(version uint) {
         global.DB.Create(admin)
     }
 
+}
+
+func cleanupServerRegistry() {
+    if global.DB == nil {
+        return
+    }
+    res := global.DB.Where("1 = 1").Delete(&model.Peer{})
+    if res.Error != nil {
+        global.Logger.Errorf("server registry cleanup failed: %v", res.Error)
+        return
+    }
+    global.Logger.Infof("server registry cleanup done, removed %d records", res.RowsAffected)
 }

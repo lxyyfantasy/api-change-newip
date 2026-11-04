@@ -158,3 +158,20 @@ func (ps *PeerService) BatchDelete(ids []uint) error {
 func (ps *PeerService) Update(u *model.Peer) error {
     return DB.Model(u).Updates(u).Error
 }
+
+// GetServerIpById 根据id取服务器ip
+func (ps *PeerService) GetServerIpById(id string) string {
+	p := &model.Peer{}
+	DB.Select("server_ip").Where("id = ?", id).First(p)
+	return p.ServerIp
+}
+
+// SetServerIpById 设置设备服务器ip
+func (ps *PeerService) SetServerIpById(id string, ip string) error {
+	return DB.Model(&model.Peer{}).Where("id = ?", id).Update("server_ip", ip).Error
+}
+
+// SetConnectTypeById 设置连接方式
+func (ps *PeerService) SetConnectTypeById(id string, t string) error {
+	return DB.Model(&model.Peer{}).Where("id = ?", id).Update("connect_type", t).Error
+}

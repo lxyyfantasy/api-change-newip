@@ -18,6 +18,7 @@ type Peer struct {
     Alias          string `json:"alias" gorm:"default:'';not null;index"`
 	Account       string `json:"account" gorm:"default:'';not null;index"`
 	Category      string `json:"category" gorm:"default:'';not null;index"`
+	ServerIp      string `json:"server_ip" gorm:"default:'';not null;"`
     LanIp         string `json:"lan_ip" gorm:"default:'';not null;"`
     DeviceCode    string `json:"device_code" gorm:"default:'';not null;index"`
     LeaseExpireAt int64  `json:"lease_expire_at" gorm:"default:0;not null;"`
