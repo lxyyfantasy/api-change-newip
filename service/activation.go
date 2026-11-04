@@ -515,6 +515,41 @@ func (as *ActivationService) RebuildOrphanHost() {
     tx.Commit()
 }
 
+// SyncOrphanHost 每小时兜底扫描：全扫 Peer 表，把符合游离条件但游离表中没有的 ID 补进去
+// 筛选逻辑与 RebuildOrphanHost 完全一致：account='__device__' 且 host_expire_at > now
+// 新增记录一律按未分配写入：taken_at = 0
+func (as *ActivationService) SyncOrphanHost() {
+    now := time.Now().Unix()
+
+    var ids []string
+    DB.Model(&model.Peer{}).
+        Where("account = ? AND host_expire_at > ?", "__device__", now).
+        Pluck("id", &ids)
+    if len(ids) == 0 {
+        return
+    }
+
+    // 查重：不带 taken_at 条件，已分配 + 未分配全部纳入
+    var exists []string
+    DB.Model(&model.OrphanHostDevice{}).
+        Where("id in ?", ids).
+        Pluck("id", &exists)
+    existSet := make(map[string]struct{}, len(exists))
+    for _, id := range exists {
+        existSet[id] = struct{}{}
+    }
+
+    // 只补缺失的，统一按未分配(taken_at=0)写入
+    tx := DB.Begin()
+    for _, id := range ids {
+        if _, ok := existSet[id]; ok {
+            continue
+        }
+        tx.Create(&model.OrphanHostDevice{Id: id, TakenAt: 0})
+    }
+    tx.Commit()
+}
+
 // PullOrphanHost 分发游离托管设备：取 n 个未分发的，标记已分发，返回ID
 func (as *ActivationService) PullOrphanHost(n int) []string {
     if n <= 0 {

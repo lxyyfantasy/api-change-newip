@@ -233,6 +233,17 @@ func InitGlobal() {
             service.AllService.ActivationService.RebuildOrphanHost()
         }
     }()
+    // 每小时兜底扫描：补充新满足条件的游离托管设备（按未分配写入）
+    go func() {
+        for {
+            now := time.Now()
+            next := now.Truncate(time.Hour).Add(time.Hour) // 对齐整点
+            time.Sleep(next.Sub(now))
+            if next.Hour() != 0 { // 0 点已由 RebuildOrphanHost 全量覆盖
+                service.AllService.ActivationService.SyncOrphanHost()
+            }
+        }
+    }()
 }
 
 func DatabaseAutoUpdate() {
