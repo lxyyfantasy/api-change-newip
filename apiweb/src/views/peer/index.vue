@@ -60,7 +60,7 @@
           <el-button type="primary" @click="toBatchAddToAB">{{ T('BatchAddToAB') }}</el-button>
           <el-button @click="openServerConfig">修改网络参数</el-button>
           <el-button @click="openTakeCodes">获取激活码</el-button>
-		  <el-button @click="openPending">待分配设备</el-button>
+          <el-button @click="openPending">待分配设备</el-button>
           <el-select v-model="listFilter" placeholder="筛选设备" style="width:160px;margin-left:8px" @change="applyListFilter">
             <el-option label="全部设备" value="all" />
             <el-option label="在线设备" value="online" />
@@ -98,11 +98,12 @@
               <span v-else>{{ row.account }}</span>
             </template>
           </el-table-column>
-		  <el-table-column v-if="c.name==='category'" prop="category" label="分类" align="center" width="110"/>
+          <el-table-column v-if="c.name==='category'" prop="category" label="分类" align="center" width="110"/>
           <el-table-column v-if="c.name==='connect_type'" prop="connect_type" label="连接" align="center" width="100">
             <template #default="{row}">
               <span v-if="row.connect_type==='direct'">P2P</span>
               <span v-else-if="row.connect_type==='relay'">中继</span>
+              <span v-else-if="row.connect_type==='ip'">IP直连</span>
               <span v-else>-</span>
             </template>
           </el-table-column>
@@ -864,7 +865,7 @@
     { name: 'id', visible: true, label: 'Id' },
     // ===== 新增 14 列 =====
     { name: 'account', visible: true, label: '账号归属' },
-	{ name: 'category', visible: true, label: '分类' },
+    { name: 'category', visible: true, label: '分类' },
     { name: 'connect_type', visible: true, label: '连接' },
     { name: 'lease_expire_at', visible: true, label: '开通有效期' },
     { name: 'host_expire_at', visible: true, label: '托管有效期' },

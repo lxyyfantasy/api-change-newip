@@ -71,6 +71,11 @@ func (i *Index) Heartbeat(c *gin.Context) {
         Where("last_online_time < ?", now-180).
         Where("connect_type <> ''").
         Update("connect_type", "")
+    // 在线但没有连接类型的，视为 IP 直连
+    service.DB.Model(&model.Peer{}).
+        Where("last_online_time >= ?", now-180).
+        Where("connect_type = ''").
+        Update("connect_type", "ip")
     c.JSON(http.StatusOK, gin.H{})
 }
 
