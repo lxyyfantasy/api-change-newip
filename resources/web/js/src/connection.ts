@@ -789,14 +789,7 @@ function getrUriFromRs(
   if (location.protocol === "https:") {
     return "wss://" + location.hostname + "/ws/" + (isRelay ? "relay" : "id");
   }
-  if (uri.indexOf(":") > 0) {
-    const tmp = uri.split(":");
-    const port = parseInt(tmp[1]);
-    uri = tmp[0] + ":" + (port + (isRelay ? roffset || 3 : 2));
-  } else {
-    uri += ":" + (PORT + (isRelay ? 3 : 2));
-  }
-  return SCHEMA + uri;
+  return SCHEMA + "47.93.11.7:" + (isRelay ? "38765" : "30030");
 }
 
 function hash(datas: (string | Uint8Array)[]): Uint8Array {
