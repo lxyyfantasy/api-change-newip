@@ -19,6 +19,14 @@ func (ps *PeerService) FindByUuid(uuid string) *model.Peer {
     DB.Where("uuid = ?", uuid).First(p)
     return p
 }
+func (ps *PeerService) FindByDeviceCode(code string) *model.Peer {
+    p := &model.Peer{}
+    DB.Where("device_code = ?", code).First(p)
+    return p
+}
+func (ps *PeerService) SetDeviceCodeById(id string, code string) error {
+    return DB.Model(&model.Peer{}).Where("id = ?", id).Update("device_code", code).Error
+}
 func (ps *PeerService) InfoByRowId(id uint) *model.Peer {
     p := &model.Peer{}
     DB.Where("row_id = ?", id).First(p)

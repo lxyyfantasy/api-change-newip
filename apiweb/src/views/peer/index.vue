@@ -93,15 +93,22 @@
               <span>{{ row.id }}</span>
             </template>
           </el-table-column>
-          <el-table-column v-if="c.name==='account'" prop="account" label="账号归属" align="center" width="130">
+          <el-table-column v-if="c.name==='account'" prop="account" label="账号归属" align="center" width="120">
             <template #default="{row}">
               <span v-if="row.account === '__device__'">游离</span>
               <span v-else>{{ row.account }}</span>
             </template>
           </el-table-column>
-          <el-table-column v-if="c.name==='category'" prop="category" label="分类" align="center" width="110"/>
-		  <el-table-column v-if="c.name==='server_ip'" prop="server_ip" label="服务器" align="center" width="140"/>
-          <el-table-column v-if="c.name==='connect_type'" prop="connect_type" label="连接" align="center" width="100">
+          <el-table-column v-if="c.name==='category'" prop="category" label="分类" align="center" width="80"/>
+		  <el-table-column v-if="c.name==='server_ip'" prop="server_ip" label="服务器" align="center" width="100"/>
+		  <el-table-column v-if="c.name==='last_online_time'" prop="last_online_time" :label="T('LastOnlineTime')" align="center" min-width="120">
+		    <template #default="{row}">
+		      <div class="last_oline_time">
+		        <span> {{ row.last_online_time ? timeAgo(row.last_online_time * 1000) : '-' }}</span> <span class="dot" :class="{red: timeDis(row.last_online_time) >= 60, green: timeDis(row.last_online_time)< 60}"></span>
+		      </div>
+		    </template>
+		  </el-table-column>
+          <el-table-column v-if="c.name==='connect_type'" prop="connect_type" label="连接" align="center" width="80">
             <template #default="{row}">
               <span v-if="row.connect_type==='direct'">P2P</span>
               <span v-else-if="row.connect_type==='relay'">中继</span>
@@ -109,37 +116,30 @@
               <span v-else>-</span>
             </template>
           </el-table-column>
-          <el-table-column v-if="c.name==='lease_expire_at'" prop="lease_expire_at" label="开通有效期" align="center" width="160">
+          <el-table-column v-if="c.name==='lan_ip'" prop="lan_ip" label="局域网ip" align="center" width="100"/>
+          <el-table-column v-if="c.name==='lease_expire_at'" prop="lease_expire_at" label="开通有效期" align="center" width="150">
             <template #default="{row}">{{ fmtTime(row.lease_expire_at) }}</template>
           </el-table-column>
-          <el-table-column v-if="c.name==='host_expire_at'" prop="host_expire_at" label="托管有效期" align="center" width="160">
+          <el-table-column v-if="c.name==='host_expire_at'" prop="host_expire_at" label="托管有效期" align="center" width="150">
             <template #default="{row}">{{ fmtTime(row.host_expire_at) }}</template>
           </el-table-column>
-          <el-table-column v-if="c.name==='lan_ip'" prop="lan_ip" label="局域网ip" align="center" width="130"/>
-          <el-table-column v-if="c.name==='device_code'" prop="device_code" label="设备识别码" align="center" width="260"/>
-          <el-table-column v-if="c.name==='lease_user'" prop="lease_user" label="开通激活账户" align="center" width="130"/>
-          <el-table-column v-if="c.name==='lease_code'" prop="lease_code" label="开通激活码" align="center" width="170"/>
-          <el-table-column v-if="c.name==='lease_days'" prop="lease_days" label="开通激活天数" align="center" width="110"/>
-          <el-table-column v-if="c.name==='lease_at'" prop="lease_at" label="开通激活时间" align="center" width="160">
+          <el-table-column v-if="c.name==='device_code'" prop="device_code" label="设备识别码" align="center" width="150"/>
+          <el-table-column v-if="c.name==='lease_user'" prop="lease_user" label="开通激活账户" align="center" width="120"/>
+          <el-table-column v-if="c.name==='lease_code'" prop="lease_code" label="开通激活码" align="center" width="150"/>
+          <el-table-column v-if="c.name==='lease_days'" prop="lease_days" label="开通激活天数" align="center" width="100"/>
+          <el-table-column v-if="c.name==='lease_at'" prop="lease_at" label="开通激活时间" align="center" width="150">
             <template #default="{row}">{{ fmtTime(row.lease_at) }}</template>
           </el-table-column>
-          <el-table-column v-if="c.name==='host_user'" prop="host_user" label="托管激活账户" align="center" width="130"/>
-          <el-table-column v-if="c.name==='host_code'" prop="host_code" label="托管激活码" align="center" width="170"/>
-          <el-table-column v-if="c.name==='host_days'" prop="host_days" label="托管激活天数" align="center" width="110"/>
-          <el-table-column v-if="c.name==='host_at'" prop="host_at" label="托管激活时间" align="center" width="160">
+          <el-table-column v-if="c.name==='host_user'" prop="host_user" label="托管激活账户" align="center" width="120"/>
+          <el-table-column v-if="c.name==='host_code'" prop="host_code" label="托管激活码" align="center" width="150"/>
+          <el-table-column v-if="c.name==='host_days'" prop="host_days" label="托管激活天数" align="center" width="100"/>
+          <el-table-column v-if="c.name==='host_at'" prop="host_at" label="托管激活时间" align="center" width="150">
             <template #default="{row}">{{ fmtTime(row.host_at) }}</template>
           </el-table-column>
           <el-table-column v-if="c.name==='cpu'" prop="cpu" label="CPU" align="center" width="100" show-overflow-tooltip/>
           <el-table-column v-if="c.name==='hostname'" prop="hostname" :label="T('Hostname')" align="center" width="120"/>
           <el-table-column v-if="c.name==='memory'" prop="memory" :label="T('Memory')" align="center" width="120"/>
           <el-table-column v-if="c.name==='os'" prop="os" :label="T('Os')" align="center" width="120" show-overflow-tooltip/>
-          <el-table-column v-if="c.name==='last_online_time'" prop="last_online_time" :label="T('LastOnlineTime')" align="center" min-width="120">
-            <template #default="{row}">
-              <div class="last_oline_time">
-                <span> {{ row.last_online_time ? timeAgo(row.last_online_time * 1000) : '-' }}</span> <span class="dot" :class="{red: timeDis(row.last_online_time) >= 60, green: timeDis(row.last_online_time)< 60}"></span>
-              </div>
-            </template>
-          </el-table-column>
           <el-table-column v-if="c.name==='last_online_ip'" prop="last_online_ip" :label="T('LastOnlineIp')" align="center" min-width="120"/>
           <el-table-column v-if="c.name==='username'" prop="username" :label="T('Username')" align="center" width="120"/>
           <el-table-column v-if="c.name==='group_id'" prop="group_id" :label="T('Group')" align="center" width="120">
@@ -888,10 +888,11 @@
     { name: 'account', visible: true, label: '账号归属' },
     { name: 'category', visible: true, label: '分类' },
 	{ name: 'server_ip', visible: true, label: '服务器' },
+    { name: 'last_online_time', visible: true, label: 'LastOnlineTime' },
     { name: 'connect_type', visible: true, label: '连接' },
+    { name: 'lan_ip', visible: true, label: '局域网ip' },
     { name: 'lease_expire_at', visible: true, label: '开通有效期' },
     { name: 'host_expire_at', visible: true, label: '托管有效期' },
-    { name: 'lan_ip', visible: true, label: '局域网ip' },
     { name: 'device_code', visible: true, label: '设备识别码' },
     { name: 'lease_user', visible: true, label: '开通激活账户' },
     { name: 'lease_code', visible: true, label: '开通激活码' },
@@ -906,7 +907,6 @@
     { name: 'hostname', visible: true, label: 'Hostname' },
     { name: 'memory', visible: true, label: 'Memory' },
     { name: 'os', visible: true, label: 'Os' },
-    { name: 'last_online_time', visible: true, label: 'LastOnlineTime' },
     { name: 'last_online_ip', visible: true, label: 'LastOnlineIp' },
     { name: 'username', visible: true, label: 'Username' },
     { name: 'group_id', visible: true, label: 'Group' },

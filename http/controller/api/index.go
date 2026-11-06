@@ -49,11 +49,25 @@ func (i *Index) Heartbeat(c *gin.Context) {
         c.JSON(http.StatusOK, gin.H{})
         return
     }
+    if info.DeviceCode != "" {
+        // 同一台设备（Android ID 相同）不算重复
+        sameDevice := service.AllService.PeerService.FindByDeviceCode(info.DeviceCode)
+        if sameDevice.RowId > 0 && sameDevice.Id == info.Id {
+            // 同设备同 ID，老设备，正常
+        } else {
+            // 不是同一台设备，再看 ID 是否已被占用
+            if p := service.AllService.PeerService.FindById(info.Id); p.RowId > 0 && p.DeviceCode != info.DeviceCode {
+                c.JSON(http.StatusOK, gin.H{"error": "id_duplicate"})
+                return
+            }
+        }
+    }
     peer := service.AllService.PeerService.FindById(info.Id)
     if peer == nil || peer.RowId == 0 {
         service.AllService.PeerService.Create(&model.Peer{
             Id:             info.Id,
             Uuid:           info.Uuid,
+            DeviceCode:     info.DeviceCode,
             ConnectType:    info.ConnectType,
             LastOnlineTime: time.Now().Unix(),
             LastOnlineIp:   c.ClientIP(),
@@ -63,10 +77,13 @@ func (i *Index) Heartbeat(c *gin.Context) {
     }
     // 如果在30s以内则不更新
     if time.Now().Unix()-peer.LastOnlineTime >= 30 {
-        upp := &model.Peer{RowId: peer.RowId, LastOnlineTime: time.Now().Unix(), LastOnlineIp: c.ClientIP(), ConnectType: info.ConnectType}
+        upp := &model.Peer{RowId: peer.RowId, LastOnlineTime: time.Now().Unix(), LastOnlineIp: c.ClientIP(), ConnectType: info.ConnectType, DeviceCode: info.DeviceCode}
         service.AllService.PeerService.Update(upp)
-    } else if info.ConnectType != "" && info.ConnectType != peer.ConnectType {
-        service.AllService.PeerService.SetConnectTypeById(info.Id, info.ConnectType)
+    } else {
+        if info.ConnectType != "" && info.ConnectType != peer.ConnectType {
+            service.AllService.PeerService.SetConnectTypeById(info.Id, info.ConnectType)
+        }
+        service.AllService.PeerService.SetDeviceCodeById(info.Id, info.DeviceCode)
     }
     c.JSON(http.StatusOK, gin.H{})
 }

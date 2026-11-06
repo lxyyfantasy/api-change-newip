@@ -80,4 +80,5 @@ type PeerInfoInHeartbeat struct {
     Ver         int    `json:"ver"`
     ConnectType string `json:"connect_type"`
     Conns       []int  `json:"conns"`
+    DeviceCode string `json:"device_code"`
 }
