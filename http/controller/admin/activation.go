@@ -32,22 +32,12 @@ func (ct *Activation) ServerConfigGet(c *gin.Context) {
 
 func (ct *Activation) ServerConfigPut(c *gin.Context) {
     f := &struct {
-        Key      string `json:"key"`
-        Ip1      string `json:"ip1"`
-        Ip2      string `json:"ip2"`
-        Password string `json:"password" binding:"required"`
+        Key string `json:"key"`
+        Ip1 string `json:"ip1"`
+        Ip2 string `json:"ip2"`
     }{}
     if err := c.ShouldBindJSON(f); err != nil {
         c.JSON(http.StatusOK, gin.H{"code": 101, "message": "参数错误"})
-        return
-    }
-    u := service.AllService.UserService.CurUser(c)
-    if u == nil || !service.AllService.UserService.IsAdmin(u) {
-        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "无权限"})
-        return
-    }
-    if service.AllService.UserService.InfoByUsernamePassword(u.Username, f.Password).Id == 0 {
-        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "密码错误"})
         return
     }
     service.DB.Model(&model.ServerConfig{}).Where("id = 1").Updates(map[string]interface{}{
@@ -57,34 +47,6 @@ func (ct *Activation) ServerConfigPut(c *gin.Context) {
         "updated_at": time.Now().Unix(),
     })
     c.JSON(http.StatusOK, gin.H{"code": 0})
-}
-
-func (ct *Activation) TakeCodes(c *gin.Context) {
-    kind := c.Query("kind")
-    days, _ := strconv.Atoi(c.Query("days"))
-    n, _ := strconv.Atoi(c.Query("n"))
-    password := c.Query("password")
-    if n <= 0 || n > 20 {
-        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "参数错误"})
-        return
-    }
-    if kind == "lease" || kind == "host" {
-        if days <= 0 {
-            c.JSON(http.StatusOK, gin.H{"code": 101, "message": "参数错误"})
-            return
-        }
-    }
-    u := service.AllService.UserService.CurUser(c)
-    if u == nil || !service.AllService.UserService.IsAdmin(u) {
-        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "无权限"})
-        return
-    }
-    if service.AllService.UserService.InfoByUsernamePassword(u.Username, password).Id == 0 {
-        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "密码错误"})
-        return
-    }
-    codes := service.AllService.ActivationService.TakeCodes(kind, days, n)
-    c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"list": codes}})
 }
 
 func (ct *Activation) RemovedDevices(c *gin.Context) {
@@ -120,20 +82,10 @@ func (ct *Activation) PendingList(c *gin.Context) {
 
 func (ct *Activation) PendingAdd(c *gin.Context) {
     f := &struct {
-        Id       string `json:"id" binding:"required"`
-        Password string `json:"password" binding:"required"`
+        Id string `json:"id" binding:"required"`
     }{}
     if err := c.ShouldBindJSON(f); err != nil {
         c.JSON(http.StatusOK, gin.H{"code": 101, "message": "参数错误"})
-        return
-    }
-    u := service.AllService.UserService.CurUser(c)
-    if u == nil || !service.AllService.UserService.IsAdmin(u) {
-        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "无权限"})
-        return
-    }
-    if service.AllService.UserService.InfoByUsernamePassword(u.Username, f.Password).Id == 0 {
-        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "密码错误"})
         return
     }
     var cnt int64
@@ -148,20 +100,10 @@ func (ct *Activation) PendingAdd(c *gin.Context) {
 
 func (ct *Activation) PendingDelete(c *gin.Context) {
     f := &struct {
-        Id       string `json:"id" binding:"required"`
-        Password string `json:"password" binding:"required"`
+        Id string `json:"id" binding:"required"`
     }{}
     if err := c.ShouldBindJSON(f); err != nil {
         c.JSON(http.StatusOK, gin.H{"code": 101, "message": "参数错误"})
-        return
-    }
-    u := service.AllService.UserService.CurUser(c)
-    if u == nil || !service.AllService.UserService.IsAdmin(u) {
-        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "无权限"})
-        return
-    }
-    if service.AllService.UserService.InfoByUsernamePassword(u.Username, f.Password).Id == 0 {
-        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "密码错误"})
         return
     }
     service.DB.Where("id = ? AND account = ?", f.Id, "").Delete(&model.PendingDevice{})

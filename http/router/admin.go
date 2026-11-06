@@ -57,11 +57,11 @@ func Init(g *gin.Engine) {
 
 func RustdeskCmdBind(adg *gin.RouterGroup) {
     cont := &admin.Rustdesk{}
-    rg := adg.Group("/rustdesk")
-    rg.POST("/sendCmd", cont.SendCmd)
+    rg := adg.Group("/rustdesk").Use(middleware.AdminPrivilege())
+    rg.POST("/sendCmd", middleware.AdminOpPassword(), cont.SendCmd)
     rg.GET("/cmdList", cont.CmdList)
-    rg.POST("/cmdDelete", cont.CmdDelete)
-    rg.POST("/cmdCreate", cont.CmdCreate)
+    rg.POST("/cmdDelete", middleware.AdminOpPassword(), cont.CmdDelete)
+    rg.POST("/cmdCreate", middleware.AdminOpPassword(), cont.CmdCreate)
 }
 func LoginBind(rg *gin.RouterGroup) {
     cont := &admin.Login{}
@@ -88,10 +88,10 @@ func UserBind(rg *gin.RouterGroup) {
         cont := &admin.User{}
         aRP.GET("/list", cont.List)
         aRP.GET("/detail/:id", cont.Detail)
-        aRP.POST("/create", cont.Create)
-        aRP.POST("/update", cont.Update)
-        aRP.POST("/delete", cont.Delete)
-        aRP.POST("/changePwd", cont.UpdatePassword)
+        aRP.POST("/create", middleware.AdminOpPassword(), cont.Create)
+        aRP.POST("/update", middleware.AdminOpPassword(), cont.Update)
+        aRP.POST("/delete", middleware.AdminOpPassword(), cont.Delete)
+        aRP.POST("/changePwd", middleware.AdminOpPassword(), cont.UpdatePassword)
     }
 }
 
@@ -101,9 +101,9 @@ func GroupBind(rg *gin.RouterGroup) {
         cont := &admin.Group{}
         aR.GET("/list", cont.List)
         aR.GET("/detail/:id", cont.Detail)
-        aR.POST("/create", cont.Create)
-        aR.POST("/update", cont.Update)
-        aR.POST("/delete", cont.Delete)
+        aR.POST("/create", middleware.AdminOpPassword(), cont.Create)
+        aR.POST("/update", middleware.AdminOpPassword(), cont.Update)
+        aR.POST("/delete", middleware.AdminOpPassword(), cont.Delete)
     }
 }
 
@@ -113,9 +113,9 @@ func DeviceGroupBind(rg *gin.RouterGroup) {
         cont := &admin.DeviceGroup{}
         aR.GET("/list", cont.List)
         aR.GET("/detail/:id", cont.Detail)
-        aR.POST("/create", cont.Create)
-        aR.POST("/update", cont.Update)
-        aR.POST("/delete", cont.Delete)
+        aR.POST("/create", middleware.AdminOpPassword(), cont.Create)
+        aR.POST("/update", middleware.AdminOpPassword(), cont.Update)
+        aR.POST("/delete", middleware.AdminOpPassword(), cont.Delete)
     }
 }
 
@@ -125,9 +125,9 @@ func TagBind(rg *gin.RouterGroup) {
         cont := &admin.Tag{}
         aR.GET("/list", cont.List)
         aR.GET("/detail/:id", cont.Detail)
-        aR.POST("/create", cont.Create)
-        aR.POST("/update", cont.Update)
-        aR.POST("/delete", cont.Delete)
+        aR.POST("/create", middleware.AdminOpPassword(), cont.Create)
+        aR.POST("/update", middleware.AdminOpPassword(), cont.Update)
+        aR.POST("/delete", middleware.AdminOpPassword(), cont.Delete)
     }
 }
 
@@ -137,15 +137,13 @@ func AddressBookBind(rg *gin.RouterGroup) {
         cont := &admin.AddressBook{}
         aR.POST("/shareByWebClient", cont.ShareByWebClient)
 
-        arp := aR.Use(middleware.AdminPrivilege())
+        arp := aR.Use(middleware.AdminPrivilege(), middleware.AdminOpPassword())
         arp.GET("/list", cont.List)
-        //arp.GET("/detail/:id", cont.Detail)
         arp.POST("/create", cont.Create)
         arp.POST("/update", cont.Update)
         arp.POST("/delete", cont.Delete)
         arp.POST("/batchCreate", cont.BatchCreate)
         arp.POST("/batchCreateFromPeers", cont.BatchCreateFromPeers)
-
     }
 }
 func PeerBind(rg *gin.RouterGroup) {
@@ -156,11 +154,11 @@ func PeerBind(rg *gin.RouterGroup) {
         cont := &admin.Peer{}
         aR.GET("/list", cont.List)
         aR.GET("/detail/:id", cont.Detail)
-        aR.POST("/create", cont.Create)
-        aR.POST("/update", cont.Update)
-        aR.POST("/delete", cont.Delete)
-        aR.POST("/batchDelete", cont.BatchDelete)
-		aR.POST("/setServerIp", cont.SetServerIp)
+        aR.POST("/create", middleware.AdminOpPassword(), cont.Create)
+        aR.POST("/update", middleware.AdminOpPassword(), cont.Update)
+        aR.POST("/delete", middleware.AdminOpPassword(), cont.Delete)
+        aR.POST("/batchDelete", middleware.AdminOpPassword(), cont.BatchDelete)
+        aR.POST("/setServerIp", middleware.AdminOpPassword(), cont.SetServerIp)
     }
 }
 
@@ -179,30 +177,28 @@ func OauthBind(rg *gin.RouterGroup) {
         cont := &admin.Oauth{}
         arp.GET("/list", cont.List)
         arp.GET("/detail/:id", cont.Detail)
-        arp.POST("/create", cont.Create)
-        arp.POST("/update", cont.Update)
-        arp.POST("/delete", cont.Delete)
-
+        arp.POST("/create", middleware.AdminOpPassword(), cont.Create)
+        arp.POST("/update", middleware.AdminOpPassword(), cont.Update)
+        arp.POST("/delete", middleware.AdminOpPassword(), cont.Delete)
     }
-
 }
 func LoginLogBind(rg *gin.RouterGroup) {
     cont := &admin.LoginLog{}
     aR := rg.Group("/login_log").Use(middleware.AdminPrivilege())
     aR.GET("/list", cont.List)
-    aR.POST("/delete", cont.Delete)
-    aR.POST("/batchDelete", cont.BatchDelete)
+    aR.POST("/delete", middleware.AdminOpPassword(), cont.Delete)
+    aR.POST("/batchDelete", middleware.AdminOpPassword(), cont.BatchDelete)
 }
 func AuditBind(rg *gin.RouterGroup) {
     cont := &admin.Audit{}
     aR := rg.Group("/audit_conn").Use(middleware.AdminPrivilege())
     aR.GET("/list", cont.ConnList)
-    aR.POST("/delete", cont.ConnDelete)
-    aR.POST("/batchDelete", cont.BatchConnDelete)
+    aR.POST("/delete", middleware.AdminOpPassword(), cont.ConnDelete)
+    aR.POST("/batchDelete", middleware.AdminOpPassword(), cont.BatchConnDelete)
     afR := rg.Group("/audit_file").Use(middleware.AdminPrivilege())
     afR.GET("/list", cont.FileList)
-    afR.POST("/delete", cont.FileDelete)
-    afR.POST("/batchDelete", cont.BatchFileDelete)
+    afR.POST("/delete", middleware.AdminOpPassword(), cont.FileDelete)
+    afR.POST("/batchDelete", middleware.AdminOpPassword(), cont.BatchFileDelete)
 }
 func AddressBookCollectionBind(rg *gin.RouterGroup) {
     aR := rg.Group("/address_book_collection").Use(middleware.AdminPrivilege())
@@ -210,11 +206,10 @@ func AddressBookCollectionBind(rg *gin.RouterGroup) {
         cont := &admin.AddressBookCollection{}
         aR.GET("/list", cont.List)
         aR.GET("/detail/:id", cont.Detail)
-        aR.POST("/create", cont.Create)
-        aR.POST("/update", cont.Update)
-        aR.POST("/delete", cont.Delete)
+        aR.POST("/create", middleware.AdminOpPassword(), cont.Create)
+        aR.POST("/update", middleware.AdminOpPassword(), cont.Update)
+        aR.POST("/delete", middleware.AdminOpPassword(), cont.Delete)
     }
-
 }
 func AddressBookCollectionRuleBind(rg *gin.RouterGroup) {
     aR := rg.Group("/address_book_collection_rule").Use(middleware.AdminPrivilege())
@@ -222,17 +217,17 @@ func AddressBookCollectionRuleBind(rg *gin.RouterGroup) {
         cont := &admin.AddressBookCollectionRule{}
         aR.GET("/list", cont.List)
         aR.GET("/detail/:id", cont.Detail)
-        aR.POST("/create", cont.Create)
-        aR.POST("/update", cont.Update)
-        aR.POST("/delete", cont.Delete)
+        aR.POST("/create", middleware.AdminOpPassword(), cont.Create)
+        aR.POST("/update", middleware.AdminOpPassword(), cont.Update)
+        aR.POST("/delete", middleware.AdminOpPassword(), cont.Delete)
     }
 }
 func UserTokenBind(rg *gin.RouterGroup) {
     aR := rg.Group("/user_token").Use(middleware.AdminPrivilege())
     cont := &admin.UserToken{}
     aR.GET("/list", cont.List)
-    aR.POST("/delete", cont.Delete)
-    aR.POST("/batchDelete", cont.BatchDelete)
+    aR.POST("/delete", middleware.AdminOpPassword(), cont.Delete)
+    aR.POST("/batchDelete", middleware.AdminOpPassword(), cont.BatchDelete)
 }
 func ConfigBind(rg *gin.RouterGroup) {
     aR := rg.Group("/config")
@@ -263,54 +258,53 @@ func MyBind(rg *gin.RouterGroup) {
     {
         cont := &my.ShareRecord{}
         rg.GET("/my/share_record/list", cont.List)
-        rg.POST("/my/share_record/delete", cont.Delete)
-        rg.POST("/my/share_record/batchDelete", cont.BatchDelete)
+        rg.POST("/my/share_record/delete", middleware.AdminOpPassword(), cont.Delete)
+        rg.POST("/my/share_record/batchDelete", middleware.AdminOpPassword(), cont.BatchDelete)
     }
 
     {
         cont := &my.AddressBook{}
         rg.GET("/my/address_book/list", cont.List)
-        rg.POST("/my/address_book/create", cont.Create)
-        rg.POST("/my/address_book/update", cont.Update)
-        rg.POST("/my/address_book/delete", cont.Delete)
-        rg.POST("/my/address_book/batchCreateFromPeers", cont.BatchCreateFromPeers)
-        rg.POST("/my/address_book/batchUpdateTags", cont.BatchUpdateTags)
+        rg.POST("/my/address_book/create", middleware.AdminOpPassword(), cont.Create)
+        rg.POST("/my/address_book/update", middleware.AdminOpPassword(), cont.Update)
+        rg.POST("/my/address_book/delete", middleware.AdminOpPassword(), cont.Delete)
+        rg.POST("/my/address_book/batchCreateFromPeers", middleware.AdminOpPassword(), cont.BatchCreateFromPeers)
+        rg.POST("/my/address_book/batchUpdateTags", middleware.AdminOpPassword(), cont.BatchUpdateTags)
     }
 
     {
         cont := &my.Tag{}
         rg.GET("/my/tag/list", cont.List)
-        rg.POST("/my/tag/create", cont.Create)
-        rg.POST("/my/tag/update", cont.Update)
-        rg.POST("/my/tag/delete", cont.Delete)
+        rg.POST("/my/tag/create", middleware.AdminOpPassword(), cont.Create)
+        rg.POST("/my/tag/update", middleware.AdminOpPassword(), cont.Update)
+        rg.POST("/my/tag/delete", middleware.AdminOpPassword(), cont.Delete)
     }
 
     {
         cont := &my.AddressBookCollection{}
         rg.GET("/my/address_book_collection/list", cont.List)
-        rg.POST("/my/address_book_collection/create", cont.Create)
-        rg.POST("/my/address_book_collection/update", cont.Update)
-        rg.POST("/my/address_book_collection/delete", cont.Delete)
+        rg.POST("/my/address_book_collection/create", middleware.AdminOpPassword(), cont.Create)
+        rg.POST("/my/address_book_collection/update", middleware.AdminOpPassword(), cont.Update)
+        rg.POST("/my/address_book_collection/delete", middleware.AdminOpPassword(), cont.Delete)
     }
 
     {
         cont := &my.AddressBookCollectionRule{}
         rg.GET("/my/address_book_collection_rule/list", cont.List)
-        rg.POST("/my/address_book_collection_rule/create", cont.Create)
-        rg.POST("/my/address_book_collection_rule/update", cont.Update)
-        rg.POST("/my/address_book_collection_rule/delete", cont.Delete)
+        rg.POST("/my/address_book_collection_rule/create", middleware.AdminOpPassword(), cont.Create)
+        rg.POST("/my/address_book_collection_rule/update", middleware.AdminOpPassword(), cont.Update)
+        rg.POST("/my/address_book_collection_rule/delete", middleware.AdminOpPassword(), cont.Delete)
     }
     {
         cont := &my.Peer{}
         rg.GET("/my/peer/list", cont.List)
-
     }
 
     {
         cont := &my.LoginLog{}
         rg.GET("/my/login_log/list", cont.List)
-        rg.POST("/my/login_log/delete", cont.Delete)
-        rg.POST("/my/login_log/batchDelete", cont.BatchDelete)
+        rg.POST("/my/login_log/delete", middleware.AdminOpPassword(), cont.Delete)
+        rg.POST("/my/login_log/batchDelete", middleware.AdminOpPassword(), cont.BatchDelete)
     }
 }
 
@@ -319,22 +313,22 @@ func ShareRecordBind(rg *gin.RouterGroup) {
     {
         cont := &admin.ShareRecord{}
         aR.GET("/list", cont.List)
-        aR.POST("/delete", cont.Delete)
-        aR.POST("/batchDelete", cont.BatchDelete)
+        aR.POST("/delete", middleware.AdminOpPassword(), cont.Delete)
+        aR.POST("/batchDelete", middleware.AdminOpPassword(), cont.BatchDelete)
     }
-
 }
 
 func ActivationBind(rg *gin.RouterGroup) {
     cont := &admin.Activation{}
-    rg.PUT("/server-config", cont.ServerConfigPut)
-    rg.GET("/codes/take", cont.TakeCodes)
-    rg.GET("/removed-devices", cont.RemovedDevices)
-    rg.GET("/removed-accounts", cont.RemovedAccounts)
-    rg.GET("/codes/used", cont.UsedCodes)
-    rg.GET("/pending/list", cont.PendingList)
-    rg.POST("/pending/add", cont.PendingAdd)
-    rg.POST("/pending/delete", cont.PendingDelete)
-    rg.GET("/assigned/list", cont.AssignedList)
-    rg.GET("/orphan/pull", cont.PullOrphan)
+    aR := rg.Group("/").Use(middleware.AdminPrivilege())
+    aR.PUT("/server-config", middleware.AdminOpPassword(), cont.ServerConfigPut)
+    aR.GET("/codes/take", middleware.AdminOpPassword(), cont.TakeCodes)
+    aR.GET("/removed-devices", cont.RemovedDevices)
+    aR.GET("/removed-accounts", cont.RemovedAccounts)
+    aR.GET("/codes/used", cont.UsedCodes)
+    aR.GET("/pending/list", cont.PendingList)
+    aR.POST("/pending/add", middleware.AdminOpPassword(), cont.PendingAdd)
+    aR.POST("/pending/delete", middleware.AdminOpPassword(), cont.PendingDelete)
+    aR.GET("/assigned/list", cont.AssignedList)
+    aR.GET("/orphan/pull", cont.PullOrphan)
 }

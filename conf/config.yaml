@@ -19,6 +19,8 @@ admin:
   # ID Server and Relay Server ports https://github.com/lejianwen/rustdesk-api/issues/257
   id-server-port: 10290  # ID Server port (for server cmd)
   relay-server-port: 21357 # ID Server port (for server cmd)
+  op-password-enable: false   # true 开启操作二次密码
+  op-password: "666666"             # 二次密码，明文配置，启动时自动 hash，或直接填 bcrypt hash
 gin:
   api-addr: "0.0.0.0:23399"
   mode: "release" #release,debug,test

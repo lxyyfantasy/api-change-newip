@@ -2,6 +2,7 @@ package config
 
 import (
     "fmt"
+    "github.com/lejianwen/rustdesk-api/v2/utils"
     "github.com/spf13/viper"
     "strings"
     "time"
@@ -32,6 +33,8 @@ type Admin struct {
     HelloFile       string `mapstructure:"hello-file"`
     IdServerPort    int    `mapstructure:"id-server-port"`
     RelayServerPort int    `mapstructure:"relay-server-port"`
+    OpPasswordEnable bool  `mapstructure:"op-password-enable"`
+    OpPassword       string `mapstructure:"op-password"`
 }
 type Config struct {
     Lang       string `mapstructure:"lang"`
@@ -57,6 +60,11 @@ func (a *Admin) Init() {
     }
     if a.RelayServerPort == 0 {
         a.RelayServerPort = DefaultRelayServerPort
+    }
+    if a.OpPassword != "" && !strings.HasPrefix(a.OpPassword, "$2") {
+        if h, err := utils.EncryptPassword(a.OpPassword); err == nil {
+            a.OpPassword = h
+        }
     }
 }
 
