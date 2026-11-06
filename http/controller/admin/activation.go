@@ -49,6 +49,24 @@ func (ct *Activation) ServerConfigPut(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"code": 0})
 }
 
+func (ct *Activation) TakeCodes(c *gin.Context) {
+    kind := c.Query("kind")
+    days, _ := strconv.Atoi(c.Query("days"))
+    n, _ := strconv.Atoi(c.Query("n"))
+    if n <= 0 || n > 20 {
+        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "参数错误"})
+        return
+    }
+    if kind == "lease" || kind == "host" {
+        if days <= 0 {
+            c.JSON(http.StatusOK, gin.H{"code": 101, "message": "参数错误"})
+            return
+        }
+    }
+    codes := service.AllService.ActivationService.TakeCodes(kind, days, n)
+    c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"list": codes}})
+}
+
 func (ct *Activation) RemovedDevices(c *gin.Context) {
     list := make([]*model.RemovedDevice, 0)
     service.DB.Order("removed_at desc").Find(&list)
