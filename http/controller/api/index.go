@@ -45,21 +45,21 @@ func (i *Index) Heartbeat(c *gin.Context) {
         c.JSON(http.StatusOK, gin.H{})
         return
     }
-    if info.Uuid == "" {
+    if info.Uuid == "" || info.DeviceCode == "" || info.Id == "" {
         c.JSON(http.StatusOK, gin.H{})
         return
     }
-    if info.DeviceCode != "" {
-        // 同一台设备（Android ID 相同）不算重复
-        sameDevice := service.AllService.PeerService.FindByDeviceCode(info.DeviceCode)
-        if sameDevice.RowId > 0 && sameDevice.Id == info.Id {
-            // 同设备同 ID，老设备，正常
+    if p := service.AllService.PeerService.FindById(info.Id); p.RowId > 0 {
+        if p.DeviceCode == info.DeviceCode {
+            // 同 ID 同设备码，放行覆盖
         } else {
-            // 不是同一台设备，再看 ID 是否已被占用
-            if p := service.AllService.PeerService.FindById(info.Id); p.RowId > 0 && p.DeviceCode != info.DeviceCode {
-                c.JSON(http.StatusOK, gin.H{"error": "id_duplicate"})
-                return
-            }
+            c.JSON(http.StatusOK, gin.H{"error": "id_duplicate"})
+            return
+        }
+    } else {
+        if same := service.AllService.PeerService.FindByDeviceCode(info.DeviceCode); same.RowId > 0 {
+            service.DB.Model(&model.Peer{}).Where("row_id = ?", same.RowId).Update("id", info.Id)
+            service.DB.Model(&model.AddressBook{}).Where("id = ?", same.Id).Update("id", info.Id)
         }
     }
     peer := service.AllService.PeerService.FindById(info.Id)
