@@ -54,6 +54,7 @@ func (i *Index) Heartbeat(c *gin.Context) {
         service.AllService.PeerService.Create(&model.Peer{
             Id:             info.Id,
             Uuid:           info.Uuid,
+            ConnectType:    info.ConnectType,
             LastOnlineTime: time.Now().Unix(),
             LastOnlineIp:   c.ClientIP(),
         })
@@ -62,8 +63,10 @@ func (i *Index) Heartbeat(c *gin.Context) {
     }
     // 如果在30s以内则不更新
     if time.Now().Unix()-peer.LastOnlineTime >= 30 {
-        upp := &model.Peer{RowId: peer.RowId, LastOnlineTime: time.Now().Unix(), LastOnlineIp: c.ClientIP()}
+        upp := &model.Peer{RowId: peer.RowId, LastOnlineTime: time.Now().Unix(), LastOnlineIp: c.ClientIP(), ConnectType: info.ConnectType}
         service.AllService.PeerService.Update(upp)
+    } else if info.ConnectType != "" && info.ConnectType != peer.ConnectType {
+        service.AllService.PeerService.SetConnectTypeById(info.Id, info.ConnectType)
     }
     c.JSON(http.StatusOK, gin.H{})
 }

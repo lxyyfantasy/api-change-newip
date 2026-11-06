@@ -34,6 +34,7 @@ func (pf *PeerForm) ToPeer() *model.Peer {
         Username: pf.Username,
         Uuid:     pf.Uuid,
         Version:  pf.Version,
+        ConnectType: pf.ConnectType,
     }
 }
 
