@@ -24,6 +24,12 @@ func (ps *PeerService) FindByDeviceCode(code string) *model.Peer {
     DB.Where("device_code = ?", code).First(p)
     return p
 }
+// IsRemovedId 判断 ID 是否在已删除留存表中
+func (ps *PeerService) IsRemovedId(id string) bool {
+    var cnt int64
+    DB.Model(&model.RemovedDevice{}).Where("id = ?", id).Count(&cnt)
+    return cnt > 0
+}
 func (ps *PeerService) SetDeviceCodeById(id string, code string) error {
     return DB.Model(&model.Peer{}).Where("id = ?", id).Update("device_code", code).Error
 }

@@ -276,7 +276,7 @@ func (as *ActivationService) removePeerAndAB(id string) {
     DB.Where("id = ?", id).Delete(&model.AddressBook{})
 }
 
-// CleanEmptyAccounts 名下无设备的账号：进留存表，3 天后删账号；留存表 30 天后清
+// CleanEmptyAccounts 名下无设备的账号：进留存表，7 天后删账号；留存表 30 天后清
 func (as *ActivationService) CleanEmptyAccounts() {
     // 1. 扫普通用户，名下无设备就进留存表（已有记录不重复插）
     var users []model.User
@@ -294,11 +294,11 @@ func (as *ActivationService) CleanEmptyAccounts() {
         }
     }
 
-    // 2. 进留存表满 10 天的，删账号和注册信息，留存记录留着
-    cutoff10 := time.Now().Unix() - 10*86400
-    var eas10 []model.EmptyAccount
-    DB.Where("empty_since < ?", cutoff10).Find(&eas10)
-    for _, ea := range eas10 {
+    // 2. 进留存表满 7 天的，删账号和注册信息，留存记录留着
+    cutoff7 := time.Now().Unix() - 7*86400
+    var eas7 []model.EmptyAccount
+    DB.Where("empty_since < ?", cutoff7).Find(&eas7)
+    for _, ea := range eas7 {
         var u model.User
         if DB.Where("username = ?", ea.Account).First(&u).Error == nil {
             DB.Where("user_id = ?", u.Id).Delete(&model.UserToken{})

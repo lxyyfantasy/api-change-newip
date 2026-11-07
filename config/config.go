@@ -24,8 +24,6 @@ type App struct {
     DisablePwdLogin  bool          `mapstructure:"disable-pwd-login"`
     CaptchaThreshold int           `mapstructure:"captcha-threshold"`
     BanThreshold     int           `mapstructure:"ban-threshold"`
-    DbCleanupEnabled       bool `mapstructure:"db-cleanup-enabled"`
-    DbCleanupIntervalHours int  `mapstructure:"db-cleanup-interval-hours"`
 }
 type Admin struct {
     Title           string `mapstructure:"title"`
