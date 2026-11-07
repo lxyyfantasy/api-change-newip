@@ -72,7 +72,8 @@ func (co *Config) AdminConfig(c *gin.Context) {
 
 	if u.Id == 0 {
 		response.Success(c, &gin.H{
-			"title": global.Config.Admin.Title,
+			"title":              global.Config.Admin.Title,
+			"op_password_enable": global.Config.Admin.OpPasswordEnable,
 		})
 		return
 	}
@@ -91,7 +92,8 @@ func (co *Config) AdminConfig(c *gin.Context) {
 	//replace {{username}} to username
 	hello = strings.Replace(hello, "{{username}}", u.Username, -1)
 	response.Success(c, &gin.H{
-		"title": global.Config.Admin.Title,
-		"hello": hello,
+		"title":              global.Config.Admin.Title,
+		"hello":              hello,
+		"op_password_enable": global.Config.Admin.OpPasswordEnable,
 	})
 }
