@@ -535,3 +535,16 @@ func (us *UserService) IsUsernameExistsLocal(username string) bool {
 func (us *UserService) IsEmailExistsLdap(email string) bool {
     return AllService.LdapService.IsEmailExists(email)
 }
+
+func (us *UserService) CreateTx(tx *gorm.DB, u *model.User) error {
+    if us.IsUsernameExists(u.Username) {
+        return errors.New("UsernameExists")
+    }
+    u.Username = us.formatUsername(u.Username)
+    var err error
+    u.Password, err = utils.EncryptPassword(u.Password)
+    if err != nil {
+        return err
+    }
+    return tx.Create(u).Error
+}

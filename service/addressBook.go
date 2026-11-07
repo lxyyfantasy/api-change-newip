@@ -339,3 +339,7 @@ func (s *AddressBookService) BatchUpdateTags(abs []*model.AddressBook, tags []st
 	tagsv, _ := json.Marshal(tags)
 	return DB.Model(&model.AddressBook{}).Where("row_id in ?", ids).Update("tags", tagsv).Error
 }
+
+func (as *AddressBookService) CreateTx(tx *gorm.DB, ab *model.AddressBook) error {
+    return tx.Create(ab).Error
+}

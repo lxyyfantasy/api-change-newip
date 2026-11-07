@@ -6,6 +6,7 @@ import (
     "time"
 
     "github.com/lejianwen/rustdesk-api/v2/model"
+    "gorm.io/gorm"
 )
 
 type ActivationService struct {
@@ -571,3 +572,36 @@ func (as *ActivationService) PullOrphanHost(n int) []string {
     DB.Model(&model.OrphanHostDevice{}).Where("id in ?", ids).Update("taken_at", now)
     return ids
 }
+
+// 消费码，返回影响行数，调用方判断 == 1
+func (as *ActivationService) UseInviteCodeTx(tx *gorm.DB, code string) (int64, error) {
+    r := tx.Where("code = ?", code).Delete(&model.InviteCode{})
+    return r.RowsAffected, r.Error
+}
+
+func (as *ActivationService) UseAddDeviceCodeTx(tx *gorm.DB, code string) (int64, error) {
+    r := tx.Where("code = ?", code).Delete(&model.AddDeviceCode{})
+    return r.RowsAffected, r.Error
+}
+
+func (as *ActivationService) SaveRegInfoTx(tx *gorm.DB, account, a1, a2, a3 string) error {
+    return tx.Create(&model.RegAccountInfo{Account: account, Answer1: a1, Answer2: a2, Answer3: a3}).Error
+}
+
+// 原子取设备：UPDATE ... WHERE account='' LIMIT 1，看影响行数
+func (as *ActivationService) TakePendingDeviceTx(tx *gorm.DB, account string) (bool, string) {
+    var d model.PendingDevice
+    // 先原子占位
+    r := tx.Exec(`UPDATE pending_devices SET account=?, assigned_at=? 
+                  WHERE account='' AND id = (SELECT id FROM pending_devices WHERE account='' LIMIT 1)`,
+        account, time.Now().Unix())
+    if r.Error != nil || r.RowsAffected != 1 {
+        return false, ""
+    }
+    // 再取出 id（同一事务内，安全）
+    if tx.Where("account = ?", account).Order("assigned_at desc").First(&d).Error != nil {
+        return false, ""
+    }
+    return true, d.Id
+}
+

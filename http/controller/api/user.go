@@ -50,20 +50,31 @@ func (u *User) Register(c *gin.Context) {
         accountResp(c, "ERROR", "参数错误: "+err.Error())
         return
     }
-    // 先核对邀请码
-    if !service.AllService.ActivationService.CheckInviteCode(form.InviteCode) {
-        accountResp(c, "INVITE_ERROR", "邀请码错误")
-        return
-    }
     status := model.StatusCode(global.Config.App.RegisterStatus)
-    user := service.AllService.UserService.Register(form.Username, "", form.Password, status)
-    if user == nil {
+
+    // 事务：建用户 → 存答案 → 删邀请码（最后一步，且检查影响行数）
+    tx := service.DB.Begin()
+    user := &model.User{
+        Username: form.Username, Email: "", Password: form.Password,
+        GroupId: 1, Status: status,
+    }
+    if err := service.AllService.UserService.CreateTx(tx, user); err != nil {
+        tx.Rollback()
         accountResp(c, "ERROR", "注册失败：用户名已存在")
         return
     }
-    // 注册成功：写答案、删邀请码
-    service.AllService.ActivationService.SaveRegInfo(form.Username, form.Answer1, form.Answer2, form.Answer3)
-    service.AllService.ActivationService.UseInviteCode(form.InviteCode)
+    if err := service.AllService.ActivationService.SaveRegInfoTx(tx, form.Username, form.Answer1, form.Answer2, form.Answer3); err != nil {
+        tx.Rollback()
+        accountResp(c, "ERROR", "注册失败：保存答案出错")
+        return
+    }
+    rows, err := service.AllService.ActivationService.UseInviteCodeTx(tx, form.InviteCode)
+    if err != nil || rows != 1 {
+        tx.Rollback()
+        accountResp(c, "INVITE_ERROR", "邀请码已被使用")
+        return
+    }
+    tx.Commit()
     accountResp(c, "OK", "注册成功")
 }
 
@@ -134,18 +145,35 @@ func (u *User) AddDevice(c *gin.Context) {
         accountResp(c, "ERROR", "用户不存在")
         return
     }
-    ok, deviceId := service.AllService.ActivationService.TakePendingDevice(form.Username)
+
+    tx := service.DB.Begin()
+    ok, deviceId := service.AllService.ActivationService.TakePendingDeviceTx(tx, form.Username)
     if !ok {
+        tx.Rollback()
         accountResp(c, "EMPTY", "设备库正在补充，请耐心等待")
         return
     }
-    // 分配设备码使用后删除
-    service.AllService.ActivationService.UseAddDeviceCode(form.DeviceCode)
-    // 写入地址簿
     peer := service.AllService.PeerService.FindById(deviceId)
+    if peer.RowId == 0 {
+        tx.Rollback()
+        accountResp(c, "ERROR", "设备信息不存在，请稍后重试")
+        return
+    }
     ab := service.AllService.AddressBookService.FromPeer(peer)
     ab.UserId = cur.Id
-    service.AllService.AddressBookService.Create(ab)
+    if err := service.AllService.AddressBookService.CreateTx(tx, ab); err != nil {
+        tx.Rollback()
+        accountResp(c, "ERROR", "添加失败")
+        return
+    }
+    // 最后一步才消费码，并检查影响行数
+    rows, err := service.AllService.ActivationService.UseAddDeviceCodeTx(tx, form.DeviceCode)
+    if err != nil || rows != 1 {
+        tx.Rollback()
+        accountResp(c, "CODE_ERROR", "添加设备码已被使用")
+        return
+    }
+    tx.Commit()
     accountResp(c, "OK", "添加成功:"+deviceId)
 }
 
