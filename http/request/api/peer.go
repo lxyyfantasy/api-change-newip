@@ -22,6 +22,7 @@ type PeerForm struct {
     Uuid     string `json:"uuid"`
     Version  string `json:"version"`
     ConnectType string `json:"connect_type"`
+    DeviceCode string `json:"device_code"`
 }
 
 func (pf *PeerForm) ToPeer() *model.Peer {
@@ -35,6 +36,7 @@ func (pf *PeerForm) ToPeer() *model.Peer {
         Uuid:     pf.Uuid,
         Version:  pf.Version,
         ConnectType: pf.ConnectType,
+        DeviceCode: pf.DeviceCode,
     }
 }
 

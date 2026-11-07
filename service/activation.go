@@ -277,40 +277,42 @@ func (as *ActivationService) removePeerAndAB(id string) {
     DB.Where("id = ?", id).Delete(&model.AddressBook{})
 }
 
-// CleanEmptyAccounts 名下无设备的账号：进留存表，7 天后删账号；留存表 30 天后清
 func (as *ActivationService) CleanEmptyAccounts() {
-    // 1. 扫普通用户，名下无设备就进留存表（已有记录不重复插）
-    var users []model.User
-    DB.Where("is_admin = ?", false).Find(&users)
-    for _, u := range users {
-        var cnt int64
-        DB.Model(&model.Peer{}).Where("account = ?", u.Username).Count(&cnt)
-        if cnt == 0 {
-            var ea model.EmptyAccount
-            if DB.Where("account = ?", u.Username).First(&ea).Error != nil {
-                DB.Create(&model.EmptyAccount{Account: u.Username, EmptySince: time.Now().Unix()})
-            }
-        } else {
-            DB.Where("account = ?", u.Username).Delete(&model.EmptyAccount{})
-        }
-    }
+	// 1. 扫普通用户，名下无设备记空时间，有设备清空
+	var users []model.User
+	DB.Where("is_admin = ?", false).Find(&users)
+	for _, u := range users {
+		var cnt int64
+		DB.Model(&model.Peer{}).Where("account = ?", u.Username).Count(&cnt)
+		if cnt == 0 {
+			if u.EmptySince == 0 {
+				DB.Model(&model.User{}).Where("id = ?", u.Id).Update("empty_since", time.Now().Unix())
+			}
+		} else {
+			if u.EmptySince != 0 {
+				DB.Model(&model.User{}).Where("id = ?", u.Id).Update("empty_since", 0)
+			}
+		}
+	}
 
-    // 2. 进留存表满 7 天的，删账号和注册信息，留存记录留着
-    cutoff7 := time.Now().Unix() - 7*86400
-    var eas7 []model.EmptyAccount
-    DB.Where("empty_since < ?", cutoff7).Find(&eas7)
-    for _, ea := range eas7 {
-        var u model.User
-        if DB.Where("username = ?", ea.Account).First(&u).Error == nil {
-            DB.Where("user_id = ?", u.Id).Delete(&model.UserToken{})
-            DB.Delete(&u)
-        }
-        DB.Where("account = ?", ea.Account).Delete(&model.RegAccountInfo{})
-    }
+	// 2. 空满 7 天的：删账号及关联，进留存表
+	cutoff7 := time.Now().Unix() - 7*86400
+	var delUsers []model.User
+	DB.Where("is_admin = ? AND empty_since > 0 AND empty_since < ?", false, cutoff7).Find(&delUsers)
+	for _, u := range delUsers {
+		DB.Where("user_id = ?", u.Id).Delete(&model.UserToken{})
+		DB.Where("account = ?", u.Username).Delete(&model.RegAccountInfo{})
+		DB.Delete(&u)
+		// 进留存表，留 30 天记录
+		var ea model.EmptyAccount
+		if DB.Where("account = ?", u.Username).First(&ea).Error != nil {
+			DB.Create(&model.EmptyAccount{Account: u.Username, EmptySince: time.Now().Unix()})
+		}
+	}
 
-    // 3. 留存表记录满 30 天的，删记录
-    cutoff30 := time.Now().Unix() - 30*86400
-    DB.Where("empty_since < ?", cutoff30).Delete(&model.EmptyAccount{})
+	// 3. 留存表满 30 天的，删记录
+	cutoff30 := time.Now().Unix() - 30*86400
+	DB.Where("empty_since < ?", cutoff30).Delete(&model.EmptyAccount{})
 }
 
 // CleanRemovedDevices 已删 ID 留存 30 天
@@ -339,57 +341,17 @@ func (as *ActivationService) RefreshAccountColumn() {
     }
 }
 
-// ReportIp 上报 IP + 识别码，识别码变了则迁移设备
+// ReportIp 上报 IP + 识别码
 func (as *ActivationService) ReportIp(deviceId, ip, deviceCode string) error {
 	if deviceCode != "" {
+		// 按设备码找到这台设备的行，只更新 IP 等，不动 id
 		var old model.Peer
-		DB.Where("device_code = ?", deviceCode).First(&old)
-		if old.RowId > 0 && old.Id != deviceId {
-			var exist model.Peer
-			if DB.Where("id = ?", deviceId).First(&exist).Error != nil {
-				// 新 ID 不存在，复制老信息
-				newPeer := &model.Peer{
-					Id:             deviceId,
-					Cpu:            old.Cpu,
-					Hostname:       old.Hostname,
-					Memory:         old.Memory,
-					Os:             old.Os,
-					Username:       old.Username,
-					Uuid:           old.Uuid,
-					Version:        old.Version,
-					UserId:         old.UserId,
-					GroupId:        old.GroupId,
-					Alias:          old.Alias,
-					Account:        old.Account,
-					Category:       "被控端",
-					LanIp:          ip,
-					DeviceCode:     deviceCode,
-					LeaseExpireAt:  old.LeaseExpireAt,
-					LeaseUser:      old.LeaseUser,
-					LeaseCode:      old.LeaseCode,
-					LeaseDays:      old.LeaseDays,
-					LeaseAt:        old.LeaseAt,
-					HostExpireAt:   old.HostExpireAt,
-					HostUser:       old.HostUser,
-					HostCode:       old.HostCode,
-					HostDays:       old.HostDays,
-					HostAt:         old.HostAt,
-					LastOnlineTime: time.Now().Unix(),
-				}
-				DB.Create(newPeer)
-				// 复制老地址簿行到新 ID
-				var ab model.AddressBook
-				if DB.Where("id = ?", old.Id).First(&ab).Error == nil {
-					newAb := ab
-					newAb.RowId = 0
-					newAb.Id = deviceId
-					DB.Create(&newAb)
-				}
-				// 删老 peer + 老地址簿
-				DB.Where("id = ?", old.Id).Delete(&model.Peer{})
-				DB.Where("id = ?", old.Id).Delete(&model.AddressBook{})
-				return nil
-			}
+		if DB.Where("device_code = ?", deviceCode).First(&old).Error == nil && old.RowId > 0 {
+			return DB.Model(&model.Peer{}).Where("row_id = ?", old.RowId).Updates(map[string]interface{}{
+				"lan_ip":           ip,
+				"last_online_time": time.Now().Unix(),
+				"category":         "被控端",
+			}).Error
 		}
 	}
 	return DB.Model(&model.Peer{}).Where("id = ?", deviceId).Updates(map[string]interface{}{

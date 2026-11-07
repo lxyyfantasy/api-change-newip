@@ -50,12 +50,6 @@ func (i *Index) Heartbeat(c *gin.Context) {
         return
     }
 
-    // 已删除 ID 留存期内，直接拒绝，不走后续任何逻辑
-    if service.AllService.PeerService.IsRemovedId(info.Id) {
-        c.JSON(http.StatusOK, gin.H{"error": "id_duplicate"})
-        return
-    }
-
     if p := service.AllService.PeerService.FindById(info.Id); p.RowId > 0 {
         if p.DeviceCode == info.DeviceCode {
             // 同 ID 同设备码，放行覆盖

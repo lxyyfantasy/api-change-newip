@@ -1,18 +1,19 @@
 package model
 
 type User struct {
-	IdModel
-	Username string `json:"username" gorm:"default:'';not null;uniqueIndex"`
-	Email    string `json:"email" gorm:"default:'';not null;index"`
-	// Email	string     	`json:"email" `
-	Password string     `json:"-" gorm:"default:'';not null;"`
-	Nickname string     `json:"nickname" gorm:"default:'';not null;"`
-	Avatar   string     `json:"avatar" gorm:"default:'';not null;"`
-	GroupId  uint       `json:"group_id" gorm:"default:0;not null;index"`
-	IsAdmin  *bool      `json:"is_admin" gorm:"default:0;not null;"`
-	Status   StatusCode `json:"status" gorm:"default:1;not null;"`
-	Remark   string     `json:"remark" gorm:"default:'';not null;"`
-	TimeModel
+    IdModel
+    Username string `json:"username" gorm:"default:'';not null;uniqueIndex"`
+    Email    string `json:"email" gorm:"default:'';not null;index"`
+    // Email	string     	`json:"email" `
+    Password string     `json:"-" gorm:"default:'';not null;"`
+    Nickname string     `json:"nickname" gorm:"default:'';not null;"`
+    Avatar   string     `json:"avatar" gorm:"default:'';not null;"`
+    GroupId  uint       `json:"group_id" gorm:"default:0;not null;index"`
+    IsAdmin  *bool      `json:"is_admin" gorm:"default:0;not null;"`
+    Status   StatusCode `json:"status" gorm:"default:1;not null;"`
+    Remark   string     `json:"remark" gorm:"default:'';not null;"`
+    EmptySince int64 `json:"empty_since" gorm:"default:0;not null;"`
+    TimeModel
 }
 
 // BeforeSave 钩子用于确保 email 字段有合理的默认值
@@ -25,11 +26,11 @@ type User struct {
 //}
 
 type UserList struct {
-	Users []*User `json:"list,omitempty"`
-	Pagination
+    Users []*User `json:"list,omitempty"`
+    Pagination
 }
 
 var UserRouteNames = []string{
-	"MyInfo",
+    "MyInfo",
 }
 var AdminRouteNames = []string{"*"}
