@@ -194,46 +194,37 @@ func (u *User) CheckInvite(c *gin.Context) {
 		accountResp(c, "ERROR", "参数错误: "+err.Error())
 		return
 	}
-	// 一、邀请码不对直接拒绝
 	if !service.AllService.ActivationService.CheckInviteCode(form.InviteCode) {
 		accountResp(c, "INVITE_ERROR", "邀请码错误")
 		return
 	}
-	// 二、邀请码对
-	// 1. 设备识别码有 → 只覆盖 ID，地址簿等其它信息不动
-	if form.DeviceCode != "" {
-		if same := service.AllService.PeerService.FindByDeviceCode(form.DeviceCode); same.RowId > 0 {
-			if form.Id != "" {
-				if p := service.AllService.PeerService.FindById(form.Id); p.RowId > 0 && p.DeviceCode != form.DeviceCode {
-					accountResp(c, "ID_DUPLICATE", "ID 已存在")
-					return
-				}
-			}
-			service.DB.Model(&model.Peer{}).Where("row_id = ?", same.RowId).Updates(map[string]interface{}{
-				"id":          form.Id,
-				"device_code": form.DeviceCode,
-			})
-			service.DB.Model(&model.AddressBook{}).Where("id = ?", same.Id).Update("id", form.Id)
-		} else {
-			// 设备码没记录：ID 有且被别的设备占 → 拒；否则建新
-			if form.Id != "" {
-				if p := service.AllService.PeerService.FindById(form.Id); p.RowId > 0 {
-					accountResp(c, "ID_DUPLICATE", "ID 已存在")
-					return
-				}
-			}
-			service.DB.Create(&model.Peer{Id: form.Id, DeviceCode: form.DeviceCode})
+	// 1. 参数有空拒绝
+	if form.Id == "" || form.DeviceCode == "" {
+		accountResp(c, "ERROR", "参数错误")
+		return
+	}
+
+	if same := service.AllService.PeerService.FindByDeviceCode(form.DeviceCode); same.RowId > 0 {
+		// 2/3. 设备码查到
+		if p := service.AllService.PeerService.FindById(form.Id); p.RowId > 0 {
+			// 3. ID 也查到，放行
+			accountResp(c, "OK", "邀请码有效")
+			return
 		}
+		// 2. ID 没查到，覆盖 ID
+		service.DB.Model(&model.Peer{}).Where("row_id = ?", same.RowId).Update("id", form.Id)
+		service.DB.Model(&model.AddressBook{}).Where("id = ?", same.Id).Update("id", form.Id)
 		accountResp(c, "OK", "邀请码有效")
 		return
 	}
-	// 2. 设备识别码没有，有 ID 且已存在 → 拒绝
-	if form.Id != "" {
-		if p := service.AllService.PeerService.FindById(form.Id); p.RowId > 0 {
-			accountResp(c, "ID_DUPLICATE", "ID 已存在")
-			return
-		}
+
+	// 设备码没查到
+	if p := service.AllService.PeerService.FindById(form.Id); p.RowId > 0 {
+		// 5. ID 查到，拒绝
+		accountResp(c, "ID_DUPLICATE", "ID 已存在")
+		return
 	}
-	// 3. 设备识别码没有，没有 ID → 放行
+	// 4. ID 没查到，新建
+	service.DB.Create(&model.Peer{Id: form.Id, DeviceCode: form.DeviceCode})
 	accountResp(c, "OK", "邀请码有效")
 }
