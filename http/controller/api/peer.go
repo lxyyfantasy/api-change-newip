@@ -7,6 +7,7 @@ import (
     requstform "github.com/lejianwen/rustdesk-api/v2/http/request/api"
     "github.com/lejianwen/rustdesk-api/v2/http/response"
     "github.com/lejianwen/rustdesk-api/v2/service"
+	"github.com/lejianwen/rustdesk-api/v2/model"
     "net/http"
 )
 
@@ -24,39 +25,48 @@ type Peer struct {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /sysinfo [post]
 func (p *Peer) SysInfo(c *gin.Context) {
-    f := &requstform.PeerForm{}
-    err := c.ShouldBindBodyWith(f, binding.JSON)
-    if err != nil {
-        response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
-        return
-    }
-    fpe := f.ToPeer()
-    pe := service.AllService.PeerService.FindById(f.Id)
-    if pe.RowId == 0 {
-        pe = f.ToPeer()
-        pe.UserId = service.AllService.UserService.FindLatestUserIdFromLoginLogByUuid(pe.Uuid, pe.Id)
-        err = service.AllService.PeerService.Create(pe)
-        if err != nil {
-            response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
-            return
-        }
-    } else {
-        if pe.DeviceCode != "" && fpe.DeviceCode != "" && pe.DeviceCode != fpe.DeviceCode {
-            c.String(http.StatusOK, "SYSINFO_UPDATED")
-            return
-        }
-        fpe.RowId = pe.RowId
-        fpe.UserId = pe.UserId
-        err = service.AllService.PeerService.Update(fpe)
-        if err != nil {
-            response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
-            return
-        }
-    }
-    //SYSINFO_UPDATED 上传成功
-    //ID_NOT_FOUND 下次心跳会上传
-    //直接响应文本
-    c.String(http.StatusOK, "SYSINFO_UPDATED")
+	f := &requstform.PeerForm{}
+	err := c.ShouldBindBodyWith(f, binding.JSON)
+	if err != nil {
+		response.Error(c, response.TranslateMsg(c, "ParamsError")+err.Error())
+		return
+	}
+	fpe := f.ToPeer()
+	// device_code 空：不建不写，等心跳带 device_code 再处理
+	if fpe.DeviceCode == "" {
+		c.String(http.StatusOK, "SYSINFO_UPDATED")
+		return
+	}
+	pe := service.AllService.PeerService.FindById(f.Id)
+	if pe.RowId == 0 {
+		// 先按 device_code 查，避免同设备建两行
+		if same := service.AllService.PeerService.FindByDeviceCode(fpe.DeviceCode); same.RowId > 0 {
+			service.DB.Model(&model.Peer{}).Where("row_id = ?", same.RowId).Update("id", fpe.Id)
+			service.DB.Model(&model.AddressBook{}).Where("id = ?", same.Id).Update("id", fpe.Id)
+			c.String(http.StatusOK, "SYSINFO_UPDATED")
+			return
+		}
+		pe = fpe
+		pe.UserId = service.AllService.UserService.FindLatestUserIdFromLoginLogByUuid(pe.Uuid, pe.Id)
+		err = service.AllService.PeerService.Create(pe)
+		if err != nil {
+			response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+			return
+		}
+	} else {
+		if pe.DeviceCode != "" && pe.DeviceCode != fpe.DeviceCode {
+			c.String(http.StatusOK, "SYSINFO_UPDATED")
+			return
+		}
+		fpe.RowId = pe.RowId
+		fpe.UserId = pe.UserId
+		err = service.AllService.PeerService.Update(fpe)
+		if err != nil {
+			response.Error(c, response.TranslateMsg(c, "OperationFailed")+err.Error())
+			return
+		}
+	}
+	c.String(http.StatusOK, "SYSINFO_UPDATED")
 }
 
 // SysInfoVer
