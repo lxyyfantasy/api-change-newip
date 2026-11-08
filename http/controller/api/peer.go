@@ -54,7 +54,10 @@ func (p *Peer) SysInfo(c *gin.Context) {
 			return
 		}
 	} else {
-		if pe.DeviceCode != "" && pe.DeviceCode != fpe.DeviceCode {
+		if pe.DeviceCode == "" && fpe.DeviceCode != "" {
+			service.DB.Model(&model.Peer{}).Where("row_id = ?", pe.RowId).Update("device_code", fpe.DeviceCode)
+		}
+		if pe.DeviceCode != "" && fpe.DeviceCode != "" && pe.DeviceCode != fpe.DeviceCode {
 			c.String(http.StatusOK, "SYSINFO_UPDATED")
 			return
 		}

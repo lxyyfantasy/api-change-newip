@@ -204,27 +204,25 @@ func (u *User) CheckInvite(c *gin.Context) {
 		return
 	}
 
-	if same := service.AllService.PeerService.FindByDeviceCode(form.DeviceCode); same.RowId > 0 {
-		// 2/3. 设备码查到
-		if p := service.AllService.PeerService.FindById(form.Id); p.RowId > 0 {
-			// 3. ID 也查到，放行
-			accountResp(c, "OK", "邀请码有效")
-			return
-		}
-		// 2. ID 没查到，覆盖 ID
+	same := service.AllService.PeerService.FindByDeviceCode(form.DeviceCode)
+	p := service.AllService.PeerService.FindById(form.Id)
+
+	switch {
+	case same.RowId > 0 && p.RowId > 0:
+		// 1. 设备码有、ID 有 → 放行
+		accountResp(c, "OK", "邀请码有效")
+	case same.RowId > 0 && p.RowId == 0:
+		// 2. 设备码有、ID 没 → 覆盖设备码行的 ID
 		service.DB.Model(&model.Peer{}).Where("row_id = ?", same.RowId).Update("id", form.Id)
 		service.DB.Model(&model.AddressBook{}).Where("id = ?", same.Id).Update("id", form.Id)
 		accountResp(c, "OK", "邀请码有效")
-		return
+	case same.RowId == 0 && p.RowId > 0:
+		// 3. 设备码没、ID 有 → 把设备码写到 ID 那行
+		service.DB.Model(&model.Peer{}).Where("row_id = ?", p.RowId).Update("device_code", form.DeviceCode)
+		accountResp(c, "OK", "邀请码有效")
+	case same.RowId == 0 && p.RowId == 0:
+		// 4. 都没有 → 新建
+		service.DB.Create(&model.Peer{Id: form.Id, DeviceCode: form.DeviceCode})
+		accountResp(c, "OK", "邀请码有效")
 	}
-
-	// 设备码没查到
-	if p := service.AllService.PeerService.FindById(form.Id); p.RowId > 0 {
-		// 5. ID 查到，拒绝
-		accountResp(c, "ID_DUPLICATE", "ID 已存在")
-		return
-	}
-	// 4. ID 没查到，新建
-	service.DB.Create(&model.Peer{Id: form.Id, DeviceCode: form.DeviceCode})
-	accountResp(c, "OK", "邀请码有效")
 }
