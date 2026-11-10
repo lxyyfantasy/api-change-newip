@@ -61,14 +61,16 @@
           <el-button @click="openServerConfig">修改网络参数</el-button>
           <el-button @click="openTakeCodes">获取激活码</el-button>
           <el-button @click="openPending">待分配设备</el-button>
-		  <el-button @click="serverIpVisible = true">设置服务器IP</el-button>
-          <el-select v-model="listFilter" placeholder="筛选设备" style="width:160px;margin-left:8px" @change="applyListFilter">
+		  <el-button @click="openServerIp">设置服务器IP</el-button>
+          <el-select v-model="listFilter" placeholder="筛选设备" style="width:160px;margin-left:8px" @change="onListFilterChange">
             <el-option label="全部设备" value="all" />
             <el-option label="在线设备" value="online" />
             <el-option label="离线设备" value="offline" />
             <el-option label="地址簿设备" value="owned" />
             <el-option label="被控端设备" value="orphan_server" />
             <el-option label="控制端设备" value="orphan_client" />
+            <el-option label="服务器ip设备" value="server_ip_filter" />
+            <el-option label="局域网ip设备" value="lan_ip_filter" />
           </el-select>
           <el-select v-model="tableSelect" placeholder="留存表" style="width:160px;margin-left:8px" @change="openTableBySelect">
             <el-option label="已删ID留存" value="removed_devices" />
@@ -100,7 +102,7 @@
             </template>
           </el-table-column>
           <el-table-column v-if="c.name==='category'" prop="category" label="分类" align="center" width="80"/>
-		  <el-table-column v-if="c.name==='server_ip'" prop="server_ip" label="服务器" align="center" width="100"/>
+		  <el-table-column v-if="c.name==='server_ip'" prop="server_ip" label="服务器ip" align="center" width="100"/>
 		  <el-table-column v-if="c.name==='last_online_time'" prop="last_online_time" :label="T('LastOnlineTime')" align="center" min-width="120">
 		    <template #default="{row}">
 		      <div class="last_oline_time">
@@ -350,18 +352,57 @@
         <el-button @click="pendingVisible = false">关闭</el-button>
       </template>
     </el-dialog>
-	<el-dialog v-model="serverIpVisible" title="设置服务器IP" width="420">
+	<el-dialog v-model="serverIpVisible" title="设置服务器IP" width="520">
 	  <el-form label-width="90px">
 	    <el-form-item label="设备ID">
 	      <el-input v-model="serverIpForm.id" placeholder="输入设备ID"/>
 	    </el-form-item>
 	    <el-form-item label="服务器IP">
-	      <el-input v-model="serverIpForm.server_ip" placeholder="ipv4，留空则清除"/>
+	      <el-select v-model="serverIpForm.server_ip" placeholder="选择服务器IP，可留空清除" clearable style="width:100%">
+	        <el-option v-for="s in serverInfoList" :key="s.id" :label="s.ip" :value="s.ip" />
+	      </el-select>
 	    </el-form-item>
 	  </el-form>
+
+	  <el-divider content-position="left">添加服务器</el-divider>
+	  <el-form inline label-width="50px">
+	    <el-form-item label="IP">
+	      <el-input v-model="serverAddForm.ip" placeholder="ip" style="width:170px" />
+	    </el-form-item>
+	    <el-form-item label="带宽">
+	      <el-input v-model="serverAddForm.bandwidth" placeholder="带宽" style="width:120px" />
+	    </el-form-item>
+	    <el-form-item>
+	      <el-button type="primary" @click="doServerAdd">添加</el-button>
+	    </el-form-item>
+	  </el-form>
+
+	  <el-divider content-position="left">服务器列表</el-divider>
+	  <el-table :data="serverInfoList" border size="small" height="220">
+	    <el-table-column prop="ip" label="IP" align="center" />
+	    <el-table-column prop="bandwidth" label="带宽" align="center" />
+	    <el-table-column prop="device_count" label="设备数量" align="center" width="100" />
+	    <el-table-column label="操作" align="center" width="90">
+	      <template #default="{row}">
+	        <el-button size="small" type="danger" @click="doServerDelete(row)">删除</el-button>
+	      </template>
+	    </el-table-column>
+	  </el-table>
+
 	  <template #footer>
 	    <el-button @click="serverIpVisible = false">取消</el-button>
 	    <el-button type="primary" @click="doSetServerIp">确定</el-button>
+	  </template>
+	</el-dialog>
+	<el-dialog v-model="ipFilterVisible" :title="ipFilterForm.type === 'server_ip_filter' ? '按服务器IP筛选' : '按局域网IP筛选'" width="420">
+	  <el-form label-width="90px">
+	    <el-form-item :label="ipFilterForm.type === 'server_ip_filter' ? '服务器IP' : '局域网IP'">
+	      <el-input v-model="ipFilterForm.ip" placeholder="输入ip" clearable/>
+	    </el-form-item>
+	  </el-form>
+	  <template #footer>
+	    <el-button @click="cancelIpFilter">取消</el-button>
+	    <el-button type="primary" @click="confirmIpFilter">确定</el-button>
 	  </template>
 	</el-dialog>
   </div>
@@ -369,7 +410,7 @@
 
 <script setup>
   import { computed, onActivated, onMounted, reactive, ref, watch } from 'vue'
-    import { all, batchRemove, create, list, remove, update, serverConfigGet, serverConfigPut, takeCodes, removedDevices, removedAccounts, usedCodes, pendingList, pendingAdd, pendingDelete, assignedList, setServerIp } from '@/api/peer'
+  import { all, batchRemove, create, list, remove, update, serverConfigGet, serverConfigPut, takeCodes, removedDevices, removedAccounts, usedCodes, pendingList, pendingAdd, pendingDelete, assignedList, setServerIp, serverList, serverCreate, serverDelete } from '@/api/peer'
   import { list as groupList } from '@/api/device_group'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { toWebClientLink } from '@/utils/webclient'
@@ -640,8 +681,35 @@
       arr = arr.filter(r => r.category === '被控端')
     } else if (listFilter.value === 'orphan_client') {
       arr = arr.filter(r => r.category === '控制端')
+    } else if (listFilter.value === 'server_ip_filter') {
+      if (ipFilterForm.ip) arr = arr.filter(r => (r.server_ip || '').includes(ipFilterForm.ip))
+    } else if (listFilter.value === 'lan_ip_filter') {
+      if (ipFilterForm.ip) arr = arr.filter(r => (r.lan_ip || '').includes(ipFilterForm.ip))
     }
     displayList.value = arr
+  }
+
+  // ip 筛选弹窗
+  const ipFilterVisible = ref(false)
+  const ipFilterForm = reactive({ type: '', ip: '' })
+
+  // 拦截下拉change: 选中两个ip筛选时先弹窗
+  const onListFilterChange = (val) => {
+    if (val === 'server_ip_filter' || val === 'lan_ip_filter') {
+      ipFilterForm.type = val
+      ipFilterForm.ip = ''
+      ipFilterVisible.value = true
+    }
+    applyListFilter()
+  }
+  const confirmIpFilter = () => {
+    ipFilterVisible.value = false
+    applyFilter()
+  }
+  const cancelIpFilter = () => {
+    ipFilterVisible.value = false
+    listFilter.value = 'all'
+    applyFilter()
   }
 
   const applyListFilter = () => {
@@ -943,6 +1011,19 @@
 
   const serverIpVisible = ref(false)
   const serverIpForm = reactive({ id: '', server_ip: '' })
+  const serverInfoList = ref([])
+  const serverAddForm = reactive({ ip: '', bandwidth: '' })
+
+  const loadServerInfoList = async () => {
+    const res = await serverList().catch(_ => false)
+    if (res) {
+      serverInfoList.value = res.data.list || []
+    }
+  }
+  const openServerIp = () => {
+    serverIpVisible.value = true
+    loadServerInfoList()
+  }
   const doSetServerIp = async () => {
     if (!serverIpForm.id) {
       ElMessage.warning('请输入设备ID')
@@ -955,6 +1036,29 @@
       serverIpForm.id = ''
       serverIpForm.server_ip = ''
       getList()
+    }
+  }
+  const doServerAdd = async () => {
+    if (!serverAddForm.ip) {
+      ElMessage.warning('请输入IP')
+      return
+    }
+    const res = await serverCreate({
+      ip: serverAddForm.ip,
+      bandwidth: serverAddForm.bandwidth,
+    }).catch(_ => false)
+    if (res) {
+      ElMessage.success('添加成功')
+      serverAddForm.ip = ''
+      serverAddForm.bandwidth = ''
+      loadServerInfoList()
+    }
+  }
+  const doServerDelete = async (row) => {
+    const res = await serverDelete({ id: row.id }).catch(_ => false)
+    if (res) {
+      ElMessage.success('删除成功')
+      loadServerInfoList()
     }
   }
 </script>

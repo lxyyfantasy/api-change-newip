@@ -61,3 +61,12 @@ export function assignedList () {
 export function setServerIp (data) {
   return request({ url: '/peer/setServerIp', method: 'post', data })
 }
+export function serverList () {
+  return request({ url: '/peer/serverList' })
+}
+export function serverCreate (data) {
+  return request({ url: '/peer/serverCreate', method: 'post', data })
+}
+export function serverDelete (data) {
+  return request({ url: '/peer/serverDelete', method: 'post', data })
+}

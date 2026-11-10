@@ -159,6 +159,9 @@ func PeerBind(rg *gin.RouterGroup) {
         aR.POST("/delete", middleware.AdminOpPassword(), cont.Delete)
         aR.POST("/batchDelete", middleware.AdminOpPassword(), cont.BatchDelete)
         aR.POST("/setServerIp", middleware.AdminOpPassword(), cont.SetServerIp)
+        aR.GET("/serverList", cont.ServerList)
+        aR.POST("/serverCreate", middleware.AdminOpPassword(), cont.ServerCreate)
+        aR.POST("/serverDelete", middleware.AdminOpPassword(), cont.ServerDelete)
     }
 }
 

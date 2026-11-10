@@ -280,3 +280,83 @@ func (ct *Peer) SetServerIp(c *gin.Context) {
 	}
 	response.Success(c, nil)
 }
+
+type PeerServerInfoForm struct {
+	Id        uint   `json:"id"`
+	Ip        string `json:"ip"`
+	Bandwidth string `json:"bandwidth"`
+}
+
+// ServerList 服务器信息列表
+// @Tags 设备
+// @Summary 服务器信息列表
+// @Description 服务器信息列表
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /admin/peer/serverList [get]
+// @Security token
+func (ct *Peer) ServerList(c *gin.Context) {
+	list := service.AllService.ServerInfoService.List()
+	response.Success(c, &gin.H{"list": list})
+}
+
+// ServerCreate 添加服务器信息
+// @Tags 设备
+// @Summary 添加服务器信息
+// @Description 添加服务器信息
+// @Accept  json
+// @Produce  json
+// @Param body body admin.PeerServerInfoForm true "服务器信息"
+// @Success 200 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /admin/peer/serverCreate [post]
+// @Security token
+func (ct *Peer) ServerCreate(c *gin.Context) {
+	f := &PeerServerInfoForm{}
+	if err := c.ShouldBindJSON(f); err != nil {
+		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		return
+	}
+	if f.Ip == "" {
+		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError"))
+		return
+	}
+	err := service.AllService.ServerInfoService.Create(f.Ip, f.Bandwidth)
+	if err != nil {
+		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		return
+	}
+	response.Success(c, nil)
+}
+
+// ServerDelete 删除服务器信息
+// @Tags 设备
+// @Summary 删除服务器信息
+// @Description 删除服务器信息, 同时清空peers表对应server_ip
+// @Accept  json
+// @Produce  json
+// @Param body body admin.PeerServerInfoForm true "服务器信息"
+// @Success 200 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /admin/peer/serverDelete [post]
+// @Security token
+func (ct *Peer) ServerDelete(c *gin.Context) {
+	f := &PeerServerInfoForm{}
+	if err := c.ShouldBindJSON(f); err != nil {
+		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		return
+	}
+	errList := global.Validator.ValidVar(c, f.Id, "required,gt=0")
+	if len(errList) > 0 {
+		response.Fail(c, 101, errList[0])
+		return
+	}
+	err := service.AllService.ServerInfoService.DeleteById(f.Id)
+	if err != nil {
+		response.Fail(c, 101, response.TranslateMsg(c, "OperationFailed")+err.Error())
+		return
+	}
+	response.Success(c, nil)
+}
