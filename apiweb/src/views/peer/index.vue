@@ -92,7 +92,7 @@
         <template v-for="c in visibleColumns.filter(cc => cc.visible)" :key="c">
           <el-table-column v-if="c.name==='id'" prop="id" label="ID" align="center" width="150">
             <template #default="{row}">
-              <span>{{ row.id }}</span>
+              <span style="cursor:pointer;color:#409eff" @click="copyId(row.id)">{{ row.id }}</span>
             </template>
           </el-table-column>
           <el-table-column v-if="c.name==='account'" prop="account" label="账号归属" align="center" width="120">
@@ -365,17 +365,11 @@
 	  </el-form>
 
 	  <el-divider content-position="left">添加服务器</el-divider>
-  	  <el-form inline>
-	    <el-form-item style="margin-right:8px">
-	      <el-input v-model="serverAddForm.ip" placeholder="IP" style="width:130px" />
-	    </el-form-item>
-	    <el-form-item style="margin-right:8px">
-	      <el-input v-model="serverAddForm.bandwidth" placeholder="带宽" style="width:100px" />
-	    </el-form-item>
-	    <el-form-item>
-	      <el-button type="primary" @click="doServerAdd">添加</el-button>
-	    </el-form-item>
-	  </el-form>
+  	  <div style="display:flex;justify-content:space-between;gap:10px">
+	    <el-input v-model="serverAddForm.ip" placeholder="IP" style="flex:1" />
+	    <el-input v-model="serverAddForm.bandwidth" placeholder="带宽" style="flex:1" />
+	    <el-button type="primary" @click="doServerAdd" style="width:80px">添加</el-button>
+	  </div>
 
 	  <el-divider content-position="left">服务器列表</el-divider>
 	  <el-table :data="serverInfoList" border size="small" height="220">
@@ -796,6 +790,15 @@
       ElMessage.success(T('OperationSuccess'))
       formVisible.value = false
       getList()
+    }
+  }
+
+  const copyId = async (id) => {
+    try {
+      await navigator.clipboard.writeText(id)
+      ElMessage({ message: '已复制', type: 'success', duration: 1000 })
+    } catch (e) {
+      // 复制失败不提示
     }
   }
 
