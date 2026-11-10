@@ -62,7 +62,7 @@
           <el-button @click="openTakeCodes">获取激活码</el-button>
           <el-button @click="openPending">待分配设备</el-button>
 		  <el-button @click="openServerIp">设置服务器IP</el-button>
-          <el-select v-model="listFilter" placeholder="筛选设备" style="width:160px;margin-left:8px" @change="onListFilterChange">
+          <el-select :model-value="filterSelect" placeholder="筛选设备" style="width:160px;margin-left:8px" @change="onListFilterChange">
             <el-option label="全部设备" value="all" />
             <el-option label="在线设备" value="online" />
             <el-option label="离线设备" value="offline" />
@@ -365,12 +365,12 @@
 	  </el-form>
 
 	  <el-divider content-position="left">添加服务器</el-divider>
-	  <el-form inline label-width="50px">
-	    <el-form-item label="IP">
-	      <el-input v-model="serverAddForm.ip" placeholder="ip" style="width:170px" />
+  	  <el-form inline>
+	    <el-form-item style="margin-right:8px">
+	      <el-input v-model="serverAddForm.ip" placeholder="IP" style="width:130px" />
 	    </el-form-item>
-	    <el-form-item label="带宽">
-	      <el-input v-model="serverAddForm.bandwidth" placeholder="带宽" style="width:120px" />
+	    <el-form-item style="margin-right:8px">
+	      <el-input v-model="serverAddForm.bandwidth" placeholder="带宽" style="width:100px" />
 	    </el-form-item>
 	    <el-form-item>
 	      <el-button type="primary" @click="doServerAdd">添加</el-button>
@@ -693,21 +693,31 @@
   const ipFilterVisible = ref(false)
   const ipFilterForm = reactive({ type: '', ip: '' })
 
-  // 拦截下拉change: 选中两个ip筛选时先弹窗
+  const filterSelect = ref('')
+  const openIpFilter = (type) => {
+    ipFilterForm.type = type
+    ipFilterForm.ip = ''
+    ipFilterVisible.value = true
+  }
   const onListFilterChange = (val) => {
     if (val === 'server_ip_filter' || val === 'lan_ip_filter') {
-      ipFilterForm.type = val
-      ipFilterForm.ip = ''
-      ipFilterVisible.value = true
+      listFilter.value = val
+      openIpFilter(val)
+      filterSelect.value = ''
+      return
     }
-    applyListFilter()
+    filterSelect.value = val
+    listFilter.value = val
+    applyFilter()
   }
   const confirmIpFilter = () => {
     ipFilterVisible.value = false
+    filterSelect.value = ''
     applyFilter()
   }
   const cancelIpFilter = () => {
     ipFilterVisible.value = false
+    filterSelect.value = ''
     listFilter.value = 'all'
     applyFilter()
   }
