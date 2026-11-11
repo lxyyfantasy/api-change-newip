@@ -124,10 +124,9 @@ func (ct *Activation) PendingAdd(c *gin.Context) {
     var cnt int64
     service.DB.Model(&model.PendingDevice{}).Where("id = ? AND account = ?", f.Id, "").Count(&cnt)
     if cnt > 0 {
-        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "该ID已在待分配列表中"})
+        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "ID已存在"})
         return
     }
-
     service.DB.Create(&model.PendingDevice{Id: f.Id})
     c.JSON(http.StatusOK, gin.H{"code": 0})
 }
