@@ -106,6 +106,13 @@ func (ct *Activation) PendingAdd(c *gin.Context) {
         c.JSON(http.StatusOK, gin.H{"code": 101, "message": "参数错误"})
         return
     }
+
+    // 新增：ID 必须在 peer 表里存在
+    if service.AllService.PeerService.FindById(f.Id).RowId == 0 {
+        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "ID不存在，不能添加"})
+        return
+    }
+
     var cnt int64
     service.DB.Model(&model.PendingDevice{}).Where("id = ?", f.Id).Count(&cnt)
     if cnt > 0 {
