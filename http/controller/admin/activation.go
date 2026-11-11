@@ -107,18 +107,23 @@ func (ct *Activation) PendingAdd(c *gin.Context) {
         return
     }
 
-    // 新增：ID 必须在 peer 表里存在
-    if service.AllService.PeerService.FindById(f.Id).RowId == 0 {
+    pe := service.AllService.PeerService.FindById(f.Id)
+    if pe.RowId == 0 {
         c.JSON(http.StatusOK, gin.H{"code": 101, "message": "ID不存在，不能添加"})
+        return
+    }
+    if pe.Account != "__device__" {
+        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "设备已被分配，不能添加"})
         return
     }
 
     var cnt int64
-    service.DB.Model(&model.PendingDevice{}).Where("id = ?", f.Id).Count(&cnt)
+    service.DB.Model(&model.PendingDevice{}).Where("id = ? AND account = ?", f.Id, "").Count(&cnt)
     if cnt > 0 {
-        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "ID已存在"})
+        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "该ID已在待分配列表中"})
         return
     }
+
     service.DB.Create(&model.PendingDevice{Id: f.Id})
     c.JSON(http.StatusOK, gin.H{"code": 0})
 }
