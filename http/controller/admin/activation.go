@@ -112,8 +112,12 @@ func (ct *Activation) PendingAdd(c *gin.Context) {
         c.JSON(http.StatusOK, gin.H{"code": 101, "message": "ID不存在，不能添加"})
         return
     }
-    if pe.Account != "__device__" {
-        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "设备已被分配，不能添加"})
+
+    // 不在任何账号的地址簿里
+    var abCnt int64
+    service.DB.Model(&model.AddressBook{}).Where("id = ?", f.Id).Count(&abCnt)
+    if abCnt > 0 {
+        c.JSON(http.StatusOK, gin.H{"code": 101, "message": "设备已在地址簿中，不能添加"})
         return
     }
 
