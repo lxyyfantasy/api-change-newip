@@ -29,10 +29,16 @@ func (a *Activation) Activate(c *gin.Context) {
     err, expireAt := service.AllService.ActivationService.Activate(f.Code, f.Kind, f.DeviceId, f.Account)
     if err != nil {
         code := "INVALID_CODE"
-        if err.Error() == "BAD_KIND" {
+        msg := "激活失败"
+        switch err.Error() {
+        case "BAD_KIND":
             code = "BAD_REQUEST"
+            msg = "参数错误"
+        case "CODE_USED":
+            code = "CODE_USED"
+            msg = "激活码已被使用"
         }
-        c.JSON(http.StatusOK, gin.H{"code": code, "msg": "激活失败"})
+        c.JSON(http.StatusOK, gin.H{"code": code, "msg": msg})
         return
     }
     c.JSON(http.StatusOK, gin.H{"code": "OK", "msg": "激活成功", "expire_at": expireAt})

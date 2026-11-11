@@ -185,50 +185,72 @@ func (u *User) PendingCount(c *gin.Context) {
 
 // CheckInvite 设置 ID 时校验：邀请码 + ID + 设备识别码
 func (u *User) CheckInvite(c *gin.Context) {
-	form := &struct {
-		InviteCode string `json:"invite_code" binding:"required"`
-		Id         string `json:"id"`
-		DeviceCode string `json:"device_code"`
-	}{}
-	if err := c.ShouldBindJSON(form); err != nil {
-		accountResp(c, "ERROR", "参数错误: "+err.Error())
-		return
-	}
-	if !service.AllService.ActivationService.CheckInviteCode(form.InviteCode) {
-		accountResp(c, "INVITE_ERROR", "邀请码错误")
-		return
-	}
-	// 1. 参数有空拒绝
-	if form.Id == "" || form.DeviceCode == "" {
-		accountResp(c, "ERROR", "参数错误")
-		return
-	}
+    form := &struct {
+        InviteCode string `json:"invite_code" binding:"required"`
+        Id         string `json:"id"`
+        DeviceCode string `json:"device_code"`
+    }{}
+    if err := c.ShouldBindJSON(form); err != nil {
+        accountResp(c, "ERROR", "参数错误: "+err.Error())
+        return
+    }
+    if !service.AllService.ActivationService.CheckInviteCode(form.InviteCode) {
+        accountResp(c, "INVITE_ERROR", "邀请码错误")
+        return
+    }
+    // 1. 参数有空拒绝
+    if form.Id == "" || form.DeviceCode == "" {
+        accountResp(c, "ERROR", "参数错误")
+        return
+    }
 
-	same := service.AllService.PeerService.FindByDeviceCode(form.DeviceCode)
-	p := service.AllService.PeerService.FindById(form.Id)
+    deviceCodeExists := service.AllService.PeerService.FindByDeviceCode(form.DeviceCode).RowId > 0
+    same := service.AllService.PeerService.FindByDeviceCode(form.DeviceCode)
+    p := service.AllService.PeerService.FindById(form.Id)
 
-	switch {
-	case same.RowId > 0 && p.RowId > 0 && same.RowId == p.RowId:
-		// 1. 设备码有、ID 有、同一行 → 放行
-		accountResp(c, "OK", "邀请码有效")
-	case same.RowId > 0 && p.RowId > 0 && same.RowId != p.RowId:
-		// 设备码一行、ID 另一行 → ID 重复，拒
-		accountResp(c, "ID_DUPLICATE", "ID 已存在")
-	case same.RowId > 0 && p.RowId == 0:
-		// 2. 设备码有、ID 没 → 覆盖设备码行的 ID
-		service.DB.Model(&model.Peer{}).Where("row_id = ?", same.RowId).Update("id", form.Id)
-		service.DB.Model(&model.AddressBook{}).Where("id = ?", same.Id).Update("id", form.Id)
-		accountResp(c, "OK", "邀请码有效")
-	case same.RowId == 0 && p.RowId > 0 && p.DeviceCode == "":
-		// 3. 设备码没、ID 有、那行设备码空 → 填设备码
-		service.DB.Model(&model.Peer{}).Where("row_id = ?", p.RowId).Update("device_code", form.DeviceCode)
-		accountResp(c, "OK", "邀请码有效")
-	case same.RowId == 0 && p.RowId > 0 && p.DeviceCode != "" && p.DeviceCode != form.DeviceCode:
-		// 4. 设备码没、ID 有、那行设备码非空且不一样 → 拒
-		accountResp(c, "ID_DUPLICATE", "ID 已存在")
-	case same.RowId == 0 && p.RowId == 0:
-		// 5. 设备码没、ID 没 → 新建
-		service.DB.Create(&model.Peer{Id: form.Id, DeviceCode: form.DeviceCode})
-		accountResp(c, "OK", "邀请码有效")
-	}
+    checkInvite := func() bool {
+        // device_code 已存在 → 不消费，直接放行
+        if deviceCodeExists {
+            return true
+        }
+        rows, err := service.AllService.ActivationService.UseInviteCodeTx(service.DB, form.InviteCode)
+        return err == nil && rows == 1
+    }
+
+    switch {
+    case same.RowId > 0 && p.RowId > 0 && same.RowId == p.RowId:
+		// 设备码一行、ID 同一行 → 放行
+        accountResp(c, "OK", "邀请码有效")
+    case same.RowId > 0 && p.RowId > 0 && same.RowId != p.RowId:
+        // 设备码一行、ID 另一行 → ID 重复，拒
+        accountResp(c, "ID_DUPLICATE", "ID 已存在")
+    case same.RowId > 0 && p.RowId == 0:
+        if !checkInvite() {
+            accountResp(c, "INVITE_ERROR", "邀请码已被使用")
+            return
+        }
+        // 2. 设备码有、ID 没 → 覆盖设备码行的 ID
+        service.DB.Model(&model.Peer{}).Where("row_id = ?", same.RowId).Update("id", form.Id)
+        service.DB.Model(&model.AddressBook{}).Where("id = ?", same.Id).Update("id", form.Id)
+        accountResp(c, "OK", "邀请码有效")
+    case same.RowId == 0 && p.RowId > 0 && p.DeviceCode == "":
+        if !checkInvite() {
+            accountResp(c, "INVITE_ERROR", "邀请码已被使用")
+            return
+        }
+        // 3. 设备码没、ID 有、那行设备码空 → 填设备码
+        service.DB.Model(&model.Peer{}).Where("row_id = ?", p.RowId).Update("device_code", form.DeviceCode)
+        accountResp(c, "OK", "邀请码有效")
+    case same.RowId == 0 && p.RowId > 0 && p.DeviceCode != "" && p.DeviceCode != form.DeviceCode:
+        // 4. 设备码没、ID 有、那行设备码非空且不一样 → 拒
+        accountResp(c, "ID_DUPLICATE", "ID 已存在")
+    case same.RowId == 0 && p.RowId == 0:
+        if !checkInvite() {
+            accountResp(c, "INVITE_ERROR", "邀请码已被使用")
+            return
+        }
+        // 5. 设备码没、ID 没 → 新建
+        service.DB.Create(&model.Peer{Id: form.Id, DeviceCode: form.DeviceCode})
+        accountResp(c, "OK", "邀请码有效")
+    }
 }

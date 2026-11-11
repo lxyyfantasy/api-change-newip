@@ -197,14 +197,21 @@ func (as *ActivationService) Activate(code, kind, deviceId, account string) (err
             var used model.LeaseCodeUsed
             if tx.Where("code = ?", code).First(&used).Error == nil && used.BindId == deviceId {
                 tx.Rollback()
-                return nil, 0
+                return errors.New("CODE_USED"), 0
             }
             tx.Rollback()
             return errors.New("INVALID_CODE"), 0
         }
         days = c.Days
-        tx.Delete(&c)
-        tx.Create(&model.LeaseCodeUsed{Code: code, Days: days, BindId: deviceId, UsedAt: now})
+        r := tx.Where("code = ?", code).Delete(&model.LeaseCodeUnused{})
+        if r.Error != nil || r.RowsAffected != 1 {
+            tx.Rollback()
+            return errors.New("CODE_USED"), 0
+        }
+        if err := tx.Create(&model.LeaseCodeUsed{Code: code, Days: days, BindId: deviceId, UsedAt: now}).Error; err != nil {
+            tx.Rollback()
+            return errors.New("INVALID_CODE"), 0
+        }
     case "host":
         expireField = "host_expire_at"
         var c model.HostCodeUnused
@@ -212,14 +219,21 @@ func (as *ActivationService) Activate(code, kind, deviceId, account string) (err
             var used model.HostCodeUsed
             if tx.Where("code = ?", code).First(&used).Error == nil && used.BindId == deviceId {
                 tx.Rollback()
-                return nil, 0
+                return errors.New("CODE_USED"), 0
             }
             tx.Rollback()
             return errors.New("INVALID_CODE"), 0
         }
         days = c.Days
-        tx.Delete(&c)
-        tx.Create(&model.HostCodeUsed{Code: code, Days: days, BindId: deviceId, UsedAt: now})
+        r := tx.Where("code = ?", code).Delete(&model.HostCodeUnused{})
+        if r.Error != nil || r.RowsAffected != 1 {
+            tx.Rollback()
+            return errors.New("CODE_USED"), 0
+        }
+        if err := tx.Create(&model.HostCodeUsed{Code: code, Days: days, BindId: deviceId, UsedAt: now}).Error; err != nil {
+            tx.Rollback()
+            return errors.New("INVALID_CODE"), 0
+        }
     default:
         tx.Rollback()
         return errors.New("BAD_KIND"), 0
