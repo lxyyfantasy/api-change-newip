@@ -219,37 +219,51 @@ func (u *User) CheckInvite(c *gin.Context) {
 
     switch {
     case same.RowId > 0 && p.RowId > 0 && same.RowId == p.RowId:
-		// 设备码一行、ID 同一行 → 放行
+        // 1.设备码一行、ID 同一行 → 放行
         accountResp(c, "OK", "邀请码有效")
     case same.RowId > 0 && p.RowId > 0 && same.RowId != p.RowId:
-        // 设备码一行、ID 另一行 → ID 重复，拒
+        // 1.1设备码一行、ID 另一行 → ID 重复，拒
         accountResp(c, "ID_DUPLICATE", "ID 已存在")
     case same.RowId > 0 && p.RowId == 0:
+        // 2. 设备码有、ID 没 → 覆盖设备码行的 ID
+        var ridCnt int64
+        service.DB.Model(&model.RegisteredId{}).Where("peer_id = ?", form.Id).Count(&ridCnt)
+        if ridCnt > 0 {
+            accountResp(c, "ID_DUPLICATE", "ID 已注册，暂不可重复使用")
+            return
+        }
         if !checkInvite() {
             accountResp(c, "INVITE_ERROR", "邀请码已被使用")
             return
         }
-        // 2. 设备码有、ID 没 → 覆盖设备码行的 ID
+        service.AllService.ActivationService.SaveRegisteredId(form.Id)
         service.DB.Model(&model.Peer{}).Where("row_id = ?", same.RowId).Update("id", form.Id)
         service.DB.Model(&model.AddressBook{}).Where("id = ?", same.Id).Update("id", form.Id)
         accountResp(c, "OK", "邀请码有效")
     case same.RowId == 0 && p.RowId > 0 && p.DeviceCode == "":
+        // 3. 设备码没、ID 有、那行设备码空 → 填设备码
         if !checkInvite() {
             accountResp(c, "INVITE_ERROR", "邀请码已被使用")
             return
         }
-        // 3. 设备码没、ID 有、那行设备码空 → 填设备码
         service.DB.Model(&model.Peer{}).Where("row_id = ?", p.RowId).Update("device_code", form.DeviceCode)
         accountResp(c, "OK", "邀请码有效")
     case same.RowId == 0 && p.RowId > 0 && p.DeviceCode != "" && p.DeviceCode != form.DeviceCode:
         // 4. 设备码没、ID 有、那行设备码非空且不一样 → 拒
         accountResp(c, "ID_DUPLICATE", "ID 已存在")
     case same.RowId == 0 && p.RowId == 0:
+        // 5. 设备码没、ID 没 → 新建
+        var ridCnt int64
+        service.DB.Model(&model.RegisteredId{}).Where("peer_id = ?", form.Id).Count(&ridCnt)
+        if ridCnt > 0 {
+            accountResp(c, "ID_DUPLICATE", "ID 已注册，暂不可重复使用")
+            return
+        }
         if !checkInvite() {
             accountResp(c, "INVITE_ERROR", "邀请码已被使用")
             return
         }
-        // 5. 设备码没、ID 没 → 新建
+        service.AllService.ActivationService.SaveRegisteredId(form.Id)
         service.DB.Create(&model.Peer{Id: form.Id, DeviceCode: form.DeviceCode})
         accountResp(c, "OK", "邀请码有效")
     }

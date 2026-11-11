@@ -23,7 +23,7 @@ import (
     "github.com/spf13/cobra"
 )
 
-const DatabaseVersion = 267
+const DatabaseVersion = 268
 
 // @title 管理系统API
 // @version 1.0
@@ -222,6 +222,7 @@ func InitGlobal() {
             service.AllService.ActivationService.CleanRemovedDevices()
             service.AllService.ActivationService.CleanOfflinePeers()
             service.AllService.ActivationService.CleanAssignedDevices()
+            service.AllService.ActivationService.CleanRegisteredIds()
             time.Sleep(24 * time.Hour)
         }
     }()
@@ -352,6 +353,7 @@ func Migrate(version uint) {
         &model.PendingDevice{},
         &model.OrphanHostDevice{},
         &model.ServerInfo{},
+        &model.RegisteredId{},
     )
     if err != nil {
         global.Logger.Error("migrate err :=>", err)

@@ -581,3 +581,18 @@ func (as *ActivationService) TakePendingDeviceTx(tx *gorm.DB, account string) (b
     return true, d.Id
 }
 
+// SaveRegisteredId 记录已注册 ID，存在则跳过（不刷新时间戳）
+func (as *ActivationService) SaveRegisteredId(peerId string) error {
+    var cnt int64
+    DB.Model(&model.RegisteredId{}).Where("peer_id = ?", peerId).Count(&cnt)
+    if cnt > 0 {
+        return nil
+    }
+    return DB.Create(&model.RegisteredId{PeerId: peerId, CreatedAt: time.Now().Unix()}).Error
+}
+
+// CleanRegisteredIds 清理 14 天前的已注册 ID
+func (as *ActivationService) CleanRegisteredIds() {
+    cutoff := time.Now().Unix() - 14*86400
+    DB.Where("created_at < ?", cutoff).Delete(&model.RegisteredId{})
+}
