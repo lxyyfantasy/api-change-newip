@@ -1,6 +1,8 @@
 package api
 
 import (
+    "strconv"
+    "time"
     "github.com/gin-gonic/gin"
     "github.com/lejianwen/rustdesk-api/v2/global"
     "github.com/lejianwen/rustdesk-api/v2/model"
@@ -173,7 +175,7 @@ func (u *User) AddDevice(c *gin.Context) {
         accountResp(c, "CODE_ERROR", "添加设备码已被使用")
         return
     }
-    tx.Model(&model.PendingDevice{}).Where("id = ?", deviceId).Update("id", "已分配_"+deviceId)
+    tx.Model(&model.PendingDevice{}).Where("id = ?", deviceId).Update("id", "已分配_"+strconv.FormatInt(time.Now().UnixNano(), 10)+"_"+deviceId)
     tx.Commit()
     accountResp(c, "OK", "添加成功:"+deviceId)
 }
