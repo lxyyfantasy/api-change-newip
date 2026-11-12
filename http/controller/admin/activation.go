@@ -145,7 +145,7 @@ func (ct *Activation) PendingDelete(c *gin.Context) {
 
 func (ct *Activation) AssignedList(c *gin.Context) {
     list := make([]*model.PendingDevice, 0)
-    service.DB.Where("account != ?", "").Order("assigned_at desc").Find(&list)
+    service.DB.Where("id LIKE ?", "已分配_%").Order("assigned_at desc").Find(&list)
     c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"list": list}})
 }
 

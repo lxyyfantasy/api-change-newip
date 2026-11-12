@@ -474,7 +474,7 @@ func (as *ActivationService) CheckRegInfo(account, a1, a2, a3 string) bool {
 // CleanAssignedDevices 已分配满30天删除
 func (as *ActivationService) CleanAssignedDevices() {
     cutoff := time.Now().Unix() - 30*86400
-    DB.Where("account != ? AND assigned_at > 0 AND assigned_at < ?", "", cutoff).Delete(&model.PendingDevice{})
+    DB.Where("id LIKE ? AND assigned_at > 0 AND assigned_at < ?", "已分配_%", cutoff).Delete(&model.PendingDevice{})
 }
 
 // RebuildOrphanHost 每天0点重建游离托管设备表：account='__device__' 且 host_expire_at > now
