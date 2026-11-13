@@ -25,7 +25,7 @@
       </el-form>
     </el-card>
     <el-card class="list-body" shadow="hover">
-      <el-table :data="listRes.list" v-loading="listRes.loading" border @selection-change="handleSelectionChange">
+      <el-table :data="listRes.list" v-loading="listRes.loading" border @selection-change="handleSelectionChange" @wheel.prevent="onTableWheel">
         <el-table-column type="selection" width="50" align="center"></el-table-column>
         <el-table-column prop="id" label="ID" align="center" width="200">
           <template #default="{row}">
@@ -209,6 +209,20 @@
     // collectionListQuery,
 
   } = useRepositories('my')
+
+  // 滚轮翻页
+  let wheelLock = false
+  const onTableWheel = (e) => {
+    if (wheelLock) return
+    if (e.deltaY === 0) return
+    wheelLock = true
+    setTimeout(() => { wheelLock = false }, 500)
+    if (e.deltaY > 0) {
+      listQuery.page++
+    } else if (listQuery.page > 1) {
+      listQuery.page--
+    }
+  }
 
   onMounted(getCollectionList)
   onMounted(getCollectionListForUpdate)

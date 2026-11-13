@@ -9,7 +9,7 @@
       </el-form>
     </el-card>
     <el-card class="list-body" shadow="hover">
-      <el-table :data="listRes.list" v-loading="listRes.loading" border>
+      <el-table :data="listRes.list" v-loading="listRes.loading" border @wheel.prevent="onTableWheel">
         <el-table-column prop="rule" :label="T('Rule')" align="center">
           <template #default="{row}">
             <div>
@@ -140,6 +140,20 @@
     TYPE_U,
     changeGId,
   } = useRepositories(props.is_my ? 'my' : 'admin')
+
+  // 滚轮翻页
+  let wheelLock = false
+  const onTableWheel = (e) => {
+    if (wheelLock) return
+    if (e.deltaY === 0) return
+    wheelLock = true
+    setTimeout(() => { wheelLock = false }, 500)
+    if (e.deltaY > 0) {
+      listQuery.page++
+    } else if (listQuery.page > 1) {
+      listQuery.page--
+    }
+  }
 
   formData.collection_id = props.collection.id
   formData.user_id = props.collection.user_id

@@ -102,7 +102,21 @@
             </template>
           </el-table-column>
           <el-table-column v-if="c.name==='category'" prop="category" label="分类" align="center" width="80"/>
-		  <el-table-column v-if="c.name==='server_ip'" prop="server_ip" label="服务器ip" align="center" width="100"/>
+		  <el-table-column v-if="c.name==='server_ip'" prop="server_ip" label="服务器ip" align="center" width="100">
+		    <template #default="{row}">
+		      <el-select
+		          :model-value="row.server_ip || ''"
+		          @change="(v) => onServerIpChange(row, v)"
+		          @visible-change="(open) => open && loadServerInfoList()"
+		          clearable
+		          size="small"
+		          style="width: 100%"
+		      >
+		        <el-option label="空" value="" />
+		        <el-option v-for="s in serverInfoList" :key="s.id" :label="s.ip" :value="s.ip" />
+		      </el-select>
+		    </template>
+		  </el-table-column>
 		  <el-table-column v-if="c.name==='last_online_time'" prop="last_online_time" :label="T('LastOnlineTime')" align="center" min-width="120">
 		    <template #default="{row}">
 		      <div class="last_oline_time">
@@ -1027,7 +1041,11 @@
   const serverInfoList = ref([])
   const serverAddForm = reactive({ ip: '', bandwidth: '' })
 
+  let lastLoadServerInfoTime = 0
   const loadServerInfoList = async () => {
+    const now = Date.now()
+    if (now - lastLoadServerInfoTime < 1000) return
+    lastLoadServerInfoTime = now
     const res = await serverList().catch(_ => false)
     if (res) {
       serverInfoList.value = res.data.list || []
@@ -1072,6 +1090,21 @@
     if (res) {
       ElMessage.success('删除成功')
       loadServerInfoList()
+    }
+  }
+  // 表格内联修改服务器ip（需管理员密码，二次密码由 request 拦截器处理）
+  const onServerIpChange = async (row, newVal) => {
+    const oldVal = row.server_ip || ''
+    const val = newVal || ''
+    if (val === oldVal) return
+    const pwd = await ElMessageBox.prompt('请输入管理员密码', '确认修改', {
+      inputType: 'password',
+    }).catch(_ => false)
+    if (!pwd) return
+    const res = await setServerIp({ id: row.id, server_ip: val }).catch(_ => false)
+    if (res) {
+      ElMessage.success('设置成功')
+      getList()
     }
   }
 </script>

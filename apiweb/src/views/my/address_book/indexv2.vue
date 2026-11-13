@@ -45,7 +45,7 @@
       </el-card>
       <el-card class="list-body" shadow="hover">
         <!--      <el-tag type="danger" style="margin-bottom: 10px">不建议在此操作地址簿，可能会造成数据不同步</el-tag>-->
-        <el-table :data="listRes.list" v-loading="listRes.loading" border>
+        <el-table :data="listRes.list" v-loading="listRes.loading" border @wheel.prevent="onTableWheel">
           <el-table-column prop="id" label="ID" align="center" width="200">
             <template #default="{row}">
               <span>{{ row.id }} <el-icon @click="handleClipboard(row.id, $event)"><CopyDocument/></el-icon></span>
@@ -204,6 +204,20 @@
     shareToWebClientForm,
     toShowShare,
   } = useRepositories()
+
+  // 滚轮翻页
+  let wheelLock = false
+  const onTableWheel = (e) => {
+    if (wheelLock) return
+    if (e.deltaY === 0) return
+    wheelLock = true
+    setTimeout(() => { wheelLock = false }, 500)
+    if (e.deltaY > 0) {
+      listQuery.page++
+    } else if (listQuery.page > 1) {
+      listQuery.page--
+    }
+  }
 
   listQuery.is_my = 1
 

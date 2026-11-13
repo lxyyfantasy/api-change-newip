@@ -19,7 +19,7 @@
       </el-form>
     </el-card>
     <el-card class="list-body" shadow="hover">
-      <el-table :data="listRes.list" v-loading="listRes.loading" border>
+      <el-table :data="listRes.list" v-loading="listRes.loading" border @wheel.prevent="onTableWheel">
         <el-table-column prop="id" label="ID" align="center"/>
         <el-table-column prop="user_id" :label="T('Owner')" align="center">
           <template #default="{row}">
@@ -97,6 +97,20 @@
     toAdd,
     submit,
   } = useRepositories('admin')
+
+  // 滚轮翻页
+  let wheelLock = false
+  const onTableWheel = (e) => {
+    if (wheelLock) return
+    if (e.deltaY === 0) return
+    wheelLock = true
+    setTimeout(() => { wheelLock = false }, 500)
+    if (e.deltaY > 0) {
+      listQuery.page++
+    } else if (listQuery.page > 1) {
+      listQuery.page--
+    }
+  }
 
   listQuery.is_my = 0
 

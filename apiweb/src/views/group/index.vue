@@ -2,9 +2,6 @@
   <div>
     <el-card class="list-query" shadow="hover">
       <el-form inline label-width="80px">
-        <!--        <el-form-item label="名称">
-                  <el-input v-model="listQuery.name"></el-input>
-                </el-form-item>-->
         <el-form-item>
           <el-button type="primary" @click="handlerQuery">{{ T('Filter') }}</el-button>
           <el-button type="danger" @click="toAdd">{{ T('Add') }}</el-button>
@@ -12,7 +9,7 @@
       </el-form>
     </el-card>
     <el-card class="list-body" shadow="hover">
-      <el-table :data="listRes.list" v-loading="listRes.loading" border>
+      <el-table :data="listRes.list" v-loading="listRes.loading" border @wheel.prevent="onTableWheel">
         <el-table-column prop="id" label="ID" align="center"></el-table-column>
         <el-table-column prop="name" :label="T('Name')" align="center"/>
         <el-table-column prop="type" :label="T('Type')" align="center">
@@ -90,6 +87,20 @@
       getList()
     } else {
       listQuery.page = 1
+    }
+  }
+
+  // 滚轮翻页
+  let wheelLock = false
+  const onTableWheel = (e) => {
+    if (wheelLock) return
+    if (e.deltaY === 0) return
+    wheelLock = true
+    setTimeout(() => { wheelLock = false }, 500)
+    if (e.deltaY > 0) {
+      listQuery.page++
+    } else if (listQuery.page > 1) {
+      listQuery.page--
     }
   }
 
