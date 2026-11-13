@@ -32,6 +32,7 @@ func ApiInit(g *gin.Engine) {
         g.POST("/check-invite", u.CheckInvite)
         // 改密码：公开，凭 username + old_password 校验（与客户端 AccountApi 一致）
         g.POST("/change-password", u.ChangePassword)
+        g.POST("/register-web", u.RegisterWeb)
     }
     
     frg := g.Group("/api")

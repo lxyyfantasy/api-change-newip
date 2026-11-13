@@ -60,6 +60,7 @@ type RegisterForm struct {
 	Answer2  string `json:"answer2" label:"回答2"`
 	Answer3  string `json:"answer3" label:"回答3"`
 	InviteCode string `json:"invite_code" label:"邀请码"`
+	RustdeskId string `json:"rustdesk_id" label:"RustDesk ID"`
 }
 
 // ChangePasswordForm 客户端 /change-password 修改密码请求

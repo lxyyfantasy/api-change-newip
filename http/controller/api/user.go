@@ -41,7 +41,7 @@ func accountResp(c *gin.Context, code, msg string) {
 }
 
 // Register 客户端注册接口（公开，无 /api 前缀）
-// 与网页端共用 app.register 开关和 UserService.Register 逻辑
+// android端和win端注册逻辑
 func (u *User) Register(c *gin.Context) {
     if !global.Config.App.Register {
         accountResp(c, "ERROR", "注册功能未开启")
@@ -54,7 +54,69 @@ func (u *User) Register(c *gin.Context) {
     }
     status := model.StatusCode(global.Config.App.RegisterStatus)
 
-    // 事务：建用户 → 存答案 → 删邀请码（最后一步，且检查影响行数）
+    // ID 必须传，空值直接拒
+    if form.RustdeskId == "" {
+        accountResp(c, "ERROR", "缺少 RustDesk ID，请先设置 ID 再注册")
+        return
+    }
+
+    // RustDesk ID 限流：同一个 ID 每天最多 3 次（只在建用户成功时计数）
+    today := time.Now().Format("2006-01-02")
+    var rc model.RegisterCount
+    service.DB.Where("rustdesk_id = ? AND date = ?", form.RustdeskId, today).First(&rc)
+    if rc.Id != 0 && rc.Count >= 3 {
+        accountResp(c, "LIMIT", "该设备今日注册次数已达上限")
+        return
+    }
+
+    tx := service.DB.Begin()
+    user := &model.User{
+        Username: form.Username, Email: "", Password: form.Password,
+        GroupId: 1, Status: status,
+    }
+    if err := service.AllService.UserService.CreateTx(tx, user); err != nil {
+        tx.Rollback()
+        accountResp(c, "ERROR", "注册失败：用户名已存在")
+        return
+    }
+    if err := service.AllService.ActivationService.SaveRegInfoTx(tx, form.Username, form.Answer1, form.Answer2, form.Answer3); err != nil {
+        tx.Rollback()
+        accountResp(c, "ERROR", "注册失败：保存答案出错")
+        return
+    }
+    tx.Commit()
+
+    // 建用户成功后才计数
+    var rc2 model.RegisterCount
+    service.DB.Where("rustdesk_id = ? AND date = ?", form.RustdeskId, today).First(&rc2)
+    if rc2.Id == 0 {
+        service.DB.Create(&model.RegisterCount{
+            RustdeskId: form.RustdeskId, Date: today, Count: 1,
+        })
+    } else {
+        service.DB.Model(&rc2).Update("count", rc2.Count+1)
+    }
+
+    accountResp(c, "OK", "注册成功")
+}
+// 网页客户端注册逻辑
+func (u *User) RegisterWeb(c *gin.Context) {
+    if !global.Config.App.Register {
+        accountResp(c, "ERROR", "注册功能未开启")
+        return
+    }
+    form := &requstform.RegisterForm{}
+    if err := c.ShouldBindJSON(form); err != nil {
+        accountResp(c, "ERROR", "参数错误: "+err.Error())
+        return
+    }
+    status := model.StatusCode(global.Config.App.RegisterStatus)
+
+    if form.InviteCode == "" {
+        accountResp(c, "INVITE_ERROR", "邀请码不能为空")
+        return
+    }
+
     tx := service.DB.Begin()
     user := &model.User{
         Username: form.Username, Email: "", Password: form.Password,
@@ -189,16 +251,12 @@ func (u *User) PendingCount(c *gin.Context) {
 // CheckInvite 设置 ID 时校验：邀请码 + ID + 设备识别码
 func (u *User) CheckInvite(c *gin.Context) {
     form := &struct {
-        InviteCode string `json:"invite_code" binding:"required"`
+        InviteCode string `json:"invite_code"`
         Id         string `json:"id"`
         DeviceCode string `json:"device_code"`
     }{}
     if err := c.ShouldBindJSON(form); err != nil {
         accountResp(c, "ERROR", "参数错误: "+err.Error())
-        return
-    }
-    if !service.AllService.ActivationService.CheckInviteCode(form.InviteCode) {
-        accountResp(c, "INVITE_ERROR", "邀请码错误")
         return
     }
     // 1. 参数有空拒绝
@@ -207,23 +265,13 @@ func (u *User) CheckInvite(c *gin.Context) {
         return
     }
 
-    deviceCodeExists := service.AllService.PeerService.FindByDeviceCode(form.DeviceCode).RowId > 0
     same := service.AllService.PeerService.FindByDeviceCode(form.DeviceCode)
     p := service.AllService.PeerService.FindById(form.Id)
-
-    checkInvite := func() bool {
-        // device_code 已存在 → 不消费，直接放行
-        if deviceCodeExists {
-            return true
-        }
-        rows, err := service.AllService.ActivationService.UseInviteCodeTx(service.DB, form.InviteCode)
-        return err == nil && rows == 1
-    }
 
     switch {
     case same.RowId > 0 && p.RowId > 0 && same.RowId == p.RowId:
         // 1.设备码一行、ID 同一行 → 放行
-        accountResp(c, "OK", "邀请码有效")
+        accountResp(c, "OK", "校验通过")
     case same.RowId > 0 && p.RowId > 0 && same.RowId != p.RowId:
         // 1.1设备码一行、ID 另一行 → ID 重复，拒
         accountResp(c, "ID_DUPLICATE", "ID 已存在")
@@ -235,22 +283,14 @@ func (u *User) CheckInvite(c *gin.Context) {
             accountResp(c, "ID_DUPLICATE", "ID 已注册，暂不可重复使用")
             return
         }
-        if !checkInvite() {
-            accountResp(c, "INVITE_ERROR", "邀请码已被使用")
-            return
-        }
         service.AllService.ActivationService.SaveRegisteredId(form.Id)
         service.DB.Model(&model.Peer{}).Where("row_id = ?", same.RowId).Update("id", form.Id)
         service.DB.Model(&model.AddressBook{}).Where("id = ?", same.Id).Update("id", form.Id)
-        accountResp(c, "OK", "邀请码有效")
+        accountResp(c, "OK", "校验通过")
     case same.RowId == 0 && p.RowId > 0 && p.DeviceCode == "":
         // 3. 设备码没、ID 有、那行设备码空 → 填设备码
-        if !checkInvite() {
-            accountResp(c, "INVITE_ERROR", "邀请码已被使用")
-            return
-        }
         service.DB.Model(&model.Peer{}).Where("row_id = ?", p.RowId).Update("device_code", form.DeviceCode)
-        accountResp(c, "OK", "邀请码有效")
+        accountResp(c, "OK", "校验通过")
     case same.RowId == 0 && p.RowId > 0 && p.DeviceCode != "" && p.DeviceCode != form.DeviceCode:
         // 4. 设备码没、ID 有、那行设备码非空且不一样 → 拒
         accountResp(c, "ID_DUPLICATE", "ID 已存在")
@@ -262,12 +302,8 @@ func (u *User) CheckInvite(c *gin.Context) {
             accountResp(c, "ID_DUPLICATE", "ID 已注册，暂不可重复使用")
             return
         }
-        if !checkInvite() {
-            accountResp(c, "INVITE_ERROR", "邀请码已被使用")
-            return
-        }
         service.AllService.ActivationService.SaveRegisteredId(form.Id)
         service.DB.Create(&model.Peer{Id: form.Id, DeviceCode: form.DeviceCode})
-        accountResp(c, "OK", "邀请码有效")
+        accountResp(c, "OK", "校验通过")
     }
 }

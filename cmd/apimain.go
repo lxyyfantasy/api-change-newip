@@ -232,6 +232,7 @@ func InitGlobal() {
             next := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).Add(24 * time.Hour)
             time.Sleep(next.Sub(now))
             service.AllService.ActivationService.RebuildOrphanHost()
+            global.DB.Where("date < ?", time.Now().Format("2006-01-02")).Delete(&model.RegisterCount{})
         }
     }()
     // 每小时兜底扫描：补充新满足条件的游离托管设备（按未分配写入）
@@ -354,6 +355,7 @@ func Migrate(version uint) {
         &model.OrphanHostDevice{},
         &model.ServerInfo{},
         &model.RegisteredId{},
+        &model.RegisterCount{},
     )
     if err != nil {
         global.Logger.Error("migrate err :=>", err)

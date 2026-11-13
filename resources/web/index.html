@@ -438,7 +438,7 @@
     if (!account || !pwd || !pwd2 || !a1 || !a2 || !a3 || !invite) { webToast('所有格子不能为空'); return; }
     if (pwd.length < 4) { webToast('密码不能少于4位'); return; }
     if (pwd !== pwd2) { webToast('两次密码不一致'); return; }
-    fetch(api + '/register', {
+    fetch(api + '/register-web', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: account, password: pwd, answer1: a1, answer2: a2, answer3: a3, invite_code: invite })

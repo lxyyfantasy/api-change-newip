@@ -1,6 +1,7 @@
 package service
 
 import (
+    "fmt"
     "crypto/rand"
     "errors"
     "time"
@@ -317,11 +318,11 @@ func (as *ActivationService) CleanEmptyAccounts() {
 		DB.Where("user_id = ?", u.Id).Delete(&model.UserToken{})
 		DB.Where("account = ?", u.Username).Delete(&model.RegAccountInfo{})
 		DB.Delete(&u)
-		// 进留存表，留 30 天记录
-		var ea model.EmptyAccount
-		if DB.Where("account = ?", u.Username).First(&ea).Error != nil {
-			DB.Create(&model.EmptyAccount{Account: u.Username, EmptySince: time.Now().Unix()})
-		}
+		// 每次删除都进留存表，留 30 天
+		DB.Create(&model.EmptyAccount{
+			Account:    fmt.Sprintf("%s_%d", u.Username, time.Now().UnixMilli()),
+			EmptySince: time.Now().Unix(),
+		})
 	}
 
 	// 3. 留存表满 30 天的，删记录
@@ -400,7 +401,7 @@ func (as *ActivationService) CleanOfflinePeers() {
     DB.Where("last_online_time > 0 AND last_online_time < ?", cutoff).Find(&list)
     for _, p := range list {
         DB.Create(&model.RemovedDevice{
-            Id:            p.Id,
+            Id: fmt.Sprintf("%s_%d", p.Id, time.Now().UnixMilli()),
             Account:       p.Account,
             LeaseExpireAt: p.LeaseExpireAt,
             HostExpireAt:  p.HostExpireAt,
