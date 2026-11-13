@@ -102,13 +102,12 @@
             </template>
           </el-table-column>
           <el-table-column v-if="c.name==='category'" prop="category" label="分类" align="center" width="80"/>
-		  <el-table-column v-if="c.name==='server_ip'" prop="server_ip" label="服务器ip" align="center" width="100">
+		  <el-table-column v-if="c.name==='server_ip'" prop="server_ip" label="服务器ip" align="center" width="150">
 		    <template #default="{row}">
 		      <el-select
 		          :model-value="row.server_ip || ''"
 		          @change="(v) => onServerIpChange(row, v)"
 		          @visible-change="(open) => open && loadServerInfoList()"
-		          clearable
 		          size="small"
 		          style="width: 100%"
 		      >
