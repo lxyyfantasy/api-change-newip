@@ -115,16 +115,93 @@ func (a *Activation) PullOrphanHost(c *gin.Context) {
 }
 
 func (a *Activation) LeaseHostIps(c *gin.Context) {
-    prefix := strings.TrimSpace(c.Query("prefix"))
-    if prefix == "" {
+    prefix := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(c.Query("prefix")), "."))
+    parts := strings.Split(prefix, ".")
+    if len(parts) != 3 {
         c.String(http.StatusOK, "")
         return
     }
+    for _, p := range parts {
+        if p == "" || len(p) > 3 {
+            c.String(http.StatusOK, "")
+            return
+        }
+        for _, ch := range p {
+            if ch < '0' || ch > '9' {
+                c.String(http.StatusOK, "")
+                return
+            }
+        }
+    }
     now := time.Now().Unix()
-    var ips []string
+
+    // 1. 按 IP 段过滤
+    type peerRow struct {
+        Id           string
+        LanIp        string
+        HostExpireAt int64
+    }
+    var peers []peerRow
     service.DB.Model(&model.Peer{}).
-        Where("lan_ip LIKE ? AND lease_expire_at > ? AND host_expire_at > ?", prefix+".%", now, now).
+        Select("id, lan_ip, host_expire_at").
+        Where("lan_ip LIKE ?", prefix+".%").
         Where("lan_ip <> ''").
-        Pluck("lan_ip", &ips)
+        Scan(&peers)
+
+    if len(peers) == 0 {
+        c.String(http.StatusOK, "")
+        return
+    }
+
+    // 2. 先按有效期分：有效直接收，过期进 expiredIds 待查归属
+    ips := make([]string, 0, len(peers))
+    expiredIds := make([]string, 0)
+    for _, p := range peers {
+        if p.HostExpireAt > now {
+            ips = append(ips, p.LanIp)
+        } else {
+            expiredIds = append(expiredIds, p.Id)
+        }
+    }
+
+    // 3. 过期设备：查地址簿归属，是管理员的也收
+    if len(expiredIds) > 0 {
+        type abRow struct {
+            Id     string
+            UserId uint
+        }
+        var abs []abRow
+        service.DB.Model(&model.AddressBook{}).
+            Select("id, user_id").
+            Where("id IN ?", expiredIds).
+            Where("user_id > 0").
+            Scan(&abs)
+
+        if len(abs) > 0 {
+            userIds := make([]uint, 0, len(abs))
+            for _, ab := range abs {
+                userIds = append(userIds, ab.UserId)
+            }
+            var adminIds []uint
+            service.DB.Model(&model.User{}).
+                Where("id IN ? AND is_admin = ?", userIds, true).
+                Pluck("id", &adminIds)
+            adminSet := make(map[uint]struct{}, len(adminIds))
+            for _, id := range adminIds {
+                adminSet[id] = struct{}{}
+            }
+
+            ipById := make(map[string]string, len(peers))
+            for _, p := range peers {
+                ipById[p.Id] = p.LanIp
+            }
+            for _, ab := range abs {
+                if _, isAdmin := adminSet[ab.UserId]; isAdmin {
+                    ips = append(ips, ipById[ab.Id])
+                }
+            }
+        }
+    }
+
     c.String(http.StatusOK, strings.Join(ips, "\n"))
 }
